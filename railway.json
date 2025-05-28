@@ -3,8 +3,8 @@
   "build": {
     "builder": "heroku",
     "buildpacks": [
-      "heroku/php",
-      "heroku/nodejs"
+      "heroku/nodejs",
+      "heroku/php"
     ]
   },
   "deploy": {
