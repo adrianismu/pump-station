@@ -1,5 +1,5 @@
 [phases.setup]
-nixPkgs = ['php82', 'nodejs_18', 'npm']
+nixPkgs = ['php82', 'nodejs_18', 'npm', 'bash']
 
 [phases.install]
 cmds = [
@@ -10,10 +10,13 @@ cmds = [
 
 [phases.build]
 cmds = [
-    'php artisan config:cache',
-    'php artisan route:cache',
-    'php artisan view:cache'
+    'php artisan config:clear',
+    'php artisan cache:clear',
+    'php artisan route:clear',
+    'php artisan view:clear',
+    'chmod -R 755 storage',
+    'chmod -R 755 bootstrap/cache'
 ]
 
 [start]
-cmd = 'php artisan serve --host=0.0.0.0 --port=$PORT' 
+cmd = 'bash start.sh' 

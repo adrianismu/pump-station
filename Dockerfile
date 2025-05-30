@@ -10,7 +10,8 @@ RUN apt-get update && apt-get install -y \
     zip \
     unzip \
     nodejs \
-    npm
+    npm \
+    bash
 
 # Install PHP extensions
 RUN docker-php-ext-install pdo_mysql mbstring exif pcntl bcmath gd
@@ -28,11 +29,18 @@ COPY . .
 RUN composer install --no-dev --optimize-autoloader
 RUN npm ci && npm run build
 
-# Set permissions
+# Clear caches and set permissions
+RUN php artisan config:clear || true
+RUN php artisan cache:clear || true
+RUN php artisan route:clear || true
+RUN php artisan view:clear || true
 RUN chmod -R 755 storage bootstrap/cache
+
+# Make startup script executable
+RUN chmod +x start.sh
 
 # Expose port
 EXPOSE $PORT
 
-# Start application
-CMD php artisan serve --host=0.0.0.0 --port=$PORT 
+# Start application with startup script
+CMD ["bash", "start.sh"] 
