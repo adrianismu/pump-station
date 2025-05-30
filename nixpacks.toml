@@ -1,5 +1,5 @@
 [phases.setup]
-nixPkgs = ['php82', 'nodejs_18', 'npm', 'bash']
+nixPkgs = ['php82', 'nodejs_18', 'npm', 'bash', 'apache2']
 
 [phases.install]
 cmds = [
@@ -10,10 +10,8 @@ cmds = [
 
 [phases.build]
 cmds = [
-    'php artisan config:clear',
-    'php artisan cache:clear',
-    'php artisan route:clear',
-    'php artisan view:clear',
+    'chmod +x start.sh',
+    'chmod +x start-apache.sh',
     'chmod -R 755 storage',
     'chmod -R 755 bootstrap/cache'
 ]
