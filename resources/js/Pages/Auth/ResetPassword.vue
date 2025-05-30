@@ -1,9 +1,8 @@
 <script setup>
-import GuestLayout from '@/Layouts/GuestLayout.vue';
+import { Button } from '@/Components/ui/button';
+import { Input } from '@/Components/ui/input';
+import { Label } from '@/Components/ui/label';
 import InputError from '@/Components/InputError.vue';
-import InputLabel from '@/Components/InputLabel.vue';
-import PrimaryButton from '@/Components/PrimaryButton.vue';
-import TextInput from '@/Components/TextInput.vue';
 import { Head, useForm } from '@inertiajs/vue3';
 
 const props = defineProps({
@@ -32,70 +31,94 @@ const submit = () => {
 </script>
 
 <template>
-    <GuestLayout>
-        <Head title="Reset Password" />
+    <Head title="Reset Password" />
 
-        <form @submit.prevent="submit">
-            <div>
-                <InputLabel for="email" value="Email" />
+    <div class="w-full lg:grid lg:min-h-screen lg:grid-cols-2">
+        <div class="flex items-center justify-center py-12">
+            <div class="mx-auto grid w-[350px] gap-6">
+                <div class="grid gap-2 text-center">
+                    <h1 class="text-3xl font-bold">Reset Password</h1>
+                    <p class="text-balance text-muted-foreground">
+                        Masukkan password baru untuk akun Anda
+                    </p>
+                </div>
 
-                <TextInput
-                    id="email"
-                    type="email"
-                    class="mt-1 block w-full"
-                    v-model="form.email"
-                    required
-                    autofocus
-                    autocomplete="username"
-                />
+                <form @submit.prevent="submit" class="grid gap-4">
+                    <div class="grid gap-2">
+                        <Label for="email">Email</Label>
+                        <Input
+                            id="email"
+                            type="email"
+                            v-model="form.email"
+                            required
+                            readonly
+                            class="bg-gray-50"
+                        />
+                        <InputError class="mt-1" :message="form.errors.email" />
+                    </div>
 
-                <InputError class="mt-2" :message="form.errors.email" />
+                    <div class="grid gap-2">
+                        <Label for="password">Password Baru</Label>
+                        <Input
+                            id="password"
+                            type="password"
+                            placeholder="Minimal 8 karakter"
+                            v-model="form.password"
+                            required
+                            autofocus
+                            autocomplete="new-password"
+                        />
+                        <InputError class="mt-1" :message="form.errors.password" />
+                    </div>
+
+                    <div class="grid gap-2">
+                        <Label for="password_confirmation">Konfirmasi Password</Label>
+                        <Input
+                            id="password_confirmation"
+                            type="password"
+                            placeholder="Ulangi password baru"
+                            v-model="form.password_confirmation"
+                            required
+                            autocomplete="new-password"
+                        />
+                        <InputError class="mt-1" :message="form.errors.password_confirmation" />
+                    </div>
+
+                    <Button 
+                        type="submit" 
+                        class="w-full" 
+                        :class="{ 'opacity-50': form.processing }"
+                        :disabled="form.processing"
+                    >
+                        {{ form.processing ? 'Memproses...' : 'Reset Password' }}
+                    </Button>
+                </form>
             </div>
-
-            <div class="mt-4">
-                <InputLabel for="password" value="Password" />
-
-                <TextInput
-                    id="password"
-                    type="password"
-                    class="mt-1 block w-full"
-                    v-model="form.password"
-                    required
-                    autocomplete="new-password"
-                />
-
-                <InputError class="mt-2" :message="form.errors.password" />
+        </div>
+        
+        <div class="hidden bg-muted lg:block relative">
+            <div 
+                class="absolute inset-0 bg-cover bg-center bg-no-repeat"
+                style="background-image: url('https://c1.wallpaperflare.com/preview/944/749/136/surabaya-bridge-suramadu-sky-java-madura.jpg')"
+            >
+                <div class="absolute inset-0 bg-black/50 backdrop-blur-[1px]">
+                    <div class="flex items-center justify-center h-full p-8">
+                        <div class="text-center text-white">
+                            <h2 class="text-4xl font-bold mb-4 drop-shadow-lg">Password Baru</h2>
+                            <p class="text-xl mb-8 drop-shadow-md">Buat password yang aman untuk akun Anda</p>
+                            <div class="bg-white/20 backdrop-blur-sm rounded-lg p-6 max-w-md border border-white/30">
+                                <h3 class="text-lg font-semibold mb-2">Tips Password Aman:</h3>
+                                <ul class="text-left space-y-2">
+                                    <li>• Minimal 8 karakter</li>
+                                    <li>• Kombinasi huruf besar dan kecil</li>
+                                    <li>• Gunakan angka dan simbol</li>
+                                    <li>• Hindari informasi pribadi</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
-
-            <div class="mt-4">
-                <InputLabel
-                    for="password_confirmation"
-                    value="Confirm Password"
-                />
-
-                <TextInput
-                    id="password_confirmation"
-                    type="password"
-                    class="mt-1 block w-full"
-                    v-model="form.password_confirmation"
-                    required
-                    autocomplete="new-password"
-                />
-
-                <InputError
-                    class="mt-2"
-                    :message="form.errors.password_confirmation"
-                />
-            </div>
-
-            <div class="mt-4 flex items-center justify-end">
-                <PrimaryButton
-                    :class="{ 'opacity-25': form.processing }"
-                    :disabled="form.processing"
-                >
-                    Reset Password
-                </PrimaryButton>
-            </div>
-        </form>
-    </GuestLayout>
+        </div>
+    </div>
 </template>

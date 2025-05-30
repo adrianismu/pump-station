@@ -55,7 +55,28 @@
 
         <!-- Login Button -->
         <div class="flex items-center space-x-4">
-          <Button as="a" :href="route('login')" variant="default" size="sm">
+          <!-- User is authenticated -->
+          <div v-if="$page.props.auth.user" class="flex items-center space-x-2">
+            <div class="hidden sm:flex sm:items-center sm:space-x-2">
+              <span class="text-sm text-muted-foreground">Halo, {{ $page.props.auth.user.name }}</span>
+            </div>
+            <Button as="a" :href="route('admin.dashboard')" variant="default" size="sm">
+              <LayoutDashboard class="mr-2 h-4 w-4" />
+              Dashboard
+            </Button>
+            <form @submit.prevent="logout" method="post" class="inline">
+              <button 
+                type="submit"
+                class="inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 border border-input bg-background hover:bg-accent hover:text-accent-foreground h-9 px-3 text-red-600 hover:text-red-700 hover:bg-red-50"
+              >
+                <LogOut class="mr-2 h-4 w-4" />
+                Logout
+              </button>
+            </form>
+          </div>
+          
+          <!-- User is not authenticated -->
+          <Button v-else as="a" :href="route('login')" variant="default" size="sm">
             <LogIn class="mr-2 h-4 w-4" />
             Login
           </Button>
@@ -124,7 +145,28 @@
             Peta
           </Link>
           <div class="pt-2 border-t">
-            <Button as="a" :href="route('login')" variant="default" size="sm" class="w-full">
+            <!-- User is authenticated -->
+            <div v-if="$page.props.auth.user" class="space-y-2">
+              <div class="px-3 py-2 text-sm text-muted-foreground">
+                Halo, {{ $page.props.auth.user.name }}
+              </div>
+              <Button as="a" :href="route('admin.dashboard')" variant="default" size="sm" class="w-full">
+                <LayoutDashboard class="mr-2 h-4 w-4" />
+                Dashboard Admin
+              </Button>
+              <form @submit.prevent="logout" method="post" class="w-full">
+                <button 
+                  type="submit"
+                  class="w-full inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 border border-input bg-background hover:bg-accent hover:text-accent-foreground h-9 px-3 text-red-600 hover:text-red-700 hover:bg-red-50"
+                >
+                  <LogOut class="mr-2 h-4 w-4" />
+                  Logout
+                </button>
+              </form>
+            </div>
+            
+            <!-- User is not authenticated -->
+            <Button v-else as="a" :href="route('login')" variant="default" size="sm" class="w-full">
               <LogIn class="mr-2 h-4 w-4" />
               Login Admin
             </Button>
@@ -214,7 +256,7 @@
 
 <script setup>
 import { ref } from 'vue'
-import { Link } from '@inertiajs/vue3'
+import { Link, router } from '@inertiajs/vue3'
 import { Button } from '@/Components/ui/button'
 import { 
   Droplet, 
@@ -222,9 +264,15 @@ import {
   Menu, 
   Phone, 
   Mail, 
-  MapPin 
+  MapPin,
+  LayoutDashboard,
+  LogOut
 } from 'lucide-vue-next'
 
 const mobileMenuOpen = ref(false)
+
+const logout = () => {
+  router.post(route('logout'))
+}
 </script> 
  

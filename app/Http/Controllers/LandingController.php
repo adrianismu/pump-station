@@ -18,9 +18,8 @@ class LandingController extends Controller
     {
         // Get active pump houses for the map
         $pumpHouses = PumpHouse::where('status', 'Aktif')
-            ->select('id', 'name', 'address', 'lat', 'lng', 'status', 'water_level')
+            ->select('id', 'name', 'location', 'latitude', 'longitude', 'status')
             ->get();
-        
         
         // Get recent alerts
         $recentAlerts = Alert::with('pump_house')
@@ -34,10 +33,19 @@ class LandingController extends Controller
             ->take(3)
             ->get();
         
+        // Calculate statistics
+        $stats = [
+            'total_pump_houses' => PumpHouse::count(),
+            'active_pump_houses' => PumpHouse::where('status', 'Aktif')->count(),
+            'total_pumps' => PumpHouse::where('status', 'Aktif')->sum('pump_count') ?: 0,
+            'recent_reports' => Report::where('created_at', '>=', now()->subWeek())->count(),
+        ];
+        
         return Inertia::render('Public/Landing', [
-            'pumpHouses' => $pumpHouses->fresh(),
+            'pumpHouses' => $pumpHouses,
             'recentAlerts' => $recentAlerts,
             'educationContent' => $educationContent,
+            'stats' => $stats,
         ]);
     }
     
