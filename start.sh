@@ -18,13 +18,21 @@ while ! php artisan migrate:status > /dev/null 2>&1; do
     fi
 done
 
-# Run database migrations
-echo "Running database migrations..."
-php artisan migrate --force
+# Check if FRESH_DB is set to reset database
+if [ "$FRESH_DB" = "true" ]; then
+    echo "🔄 Fresh database migration requested..."
+    php artisan migrate:fresh --force
+    echo "🌱 Running fresh seeders..."
+    php artisan db:seed --force
+else
+    # Run database migrations
+    echo "Running database migrations..."
+    php artisan migrate --force
 
-# Run database seeders
-echo "Running database seeders..."
-php artisan db:seed --force
+    # Run database seeders
+    echo "Running database seeders..."
+    php artisan db:seed --force
+fi
 
 # Clear and cache configurations
 echo "Optimizing application..."
