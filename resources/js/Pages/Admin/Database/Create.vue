@@ -50,8 +50,8 @@
                     id="lat" 
                     v-model="form.lat" 
                     type="number" 
-                    step="0.0000001" 
-                    placeholder="-7.25752121212121" 
+                    step="0.000000000001" 
+                    placeholder="-7.257521212121234567" 
                     :class="{ 'border-destructive': form.errors.lat }"
                     required
                   />
@@ -63,8 +63,8 @@
                     id="lng" 
                     v-model="form.lng" 
                     type="number" 
-                    step="0.0000001" 
-                    placeholder="112.7521 " 
+                    step="0.000000000001" 
+                    placeholder="112.752123456789012345" 
                     :class="{ 'border-destructive': form.errors.lng }"
                     required
                   />
@@ -131,17 +131,6 @@
                   required
                 />
                 <p v-if="form.errors.pump_count" class="text-destructive text-sm mt-1">{{ form.errors.pump_count }}</p>
-              </div>
-
-              <div>
-                <Label for="water_level">Ketinggian Air (opsional)</Label>
-                <Input 
-                  id="water_level" 
-                  v-model="form.water_level" 
-                  placeholder="2.5 meter" 
-                  :class="{ 'border-destructive': form.errors.water_level }"
-                />
-                <p v-if="form.errors.water_level" class="text-destructive text-sm mt-1">{{ form.errors.water_level }}</p>
               </div>
 
               <div>
@@ -282,7 +271,6 @@ const form = useForm({
   status: "Aktif",
   capacity: "3000 m³/jam",
   pump_count: 5,
-  water_level: "",
   image: "https://images.unsplash.com/photo-1621905252507-b35492cc74b4?q=80&w=2069&auto=format&fit=crop",
   built_year: new Date().getFullYear(),
   manager_name: "",

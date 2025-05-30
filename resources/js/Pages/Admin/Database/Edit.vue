@@ -50,8 +50,8 @@
                     id="lat" 
                     v-model="form.lat" 
                     type="number" 
-                    step="0.0000001" 
-                    placeholder="-7.2575" 
+                    step="0.000000000001" 
+                    placeholder="-7.257521212121234567" 
                     :class="{ 'border-destructive': form.errors.lat }"
                     required
                   />
@@ -63,8 +63,8 @@
                     id="lng" 
                     v-model="form.lng" 
                     type="number" 
-                    step="0.0000001" 
-                    placeholder="112.7521" 
+                    step="0.000000000001" 
+                    placeholder="112.752123456789012345" 
                     :class="{ 'border-destructive': form.errors.lng }"
                     required
                   />
@@ -131,17 +131,6 @@
                   required
                 />
                 <p v-if="form.errors.pump_count" class="text-destructive text-sm mt-1">{{ form.errors.pump_count }}</p>
-              </div>
-
-              <div>
-                <Label for="water_level">Ketinggian Air (opsional)</Label>
-                <Input 
-                  id="water_level" 
-                  v-model="form.water_level" 
-                  placeholder="2.5 meter" 
-                  :class="{ 'border-destructive': form.errors.water_level }"
-                />
-                <p v-if="form.errors.water_level" class="text-destructive text-sm mt-1">{{ form.errors.water_level }}</p>
               </div>
 
               <div>
@@ -287,7 +276,6 @@ const form = useForm({
   status: props.pumpHouse.status,
   capacity: props.pumpHouse.capacity,
   pump_count: props.pumpHouse.pump_count,
-  water_level: props.pumpHouse.water_level || "",
   image: props.pumpHouse.image,
   built_year: props.pumpHouse.built_year,
   manager_name: props.pumpHouse.manager_name,

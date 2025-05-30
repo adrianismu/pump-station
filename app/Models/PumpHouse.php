@@ -29,8 +29,8 @@ class PumpHouse extends Model
     ];
 
     protected $casts = [
-        'lat' => 'decimal:13',
-        'lng' => 'decimal:13',
+        'lat' => 'decimal:12',
+        'lng' => 'decimal:12',
         'water_level_warning' => 'float',
         'water_level_critical' => 'float',
         'last_updated' => 'datetime',
