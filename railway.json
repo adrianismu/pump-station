@@ -1,11 +1,7 @@
 {
   "$schema": "https://railway.app/railway.schema.json",
   "build": {
-    "builder": "heroku",
-    "buildpacks": [
-      "heroku/nodejs",
-      "heroku/php"
-    ]
+    "builder": "nixpacks"
   },
   "deploy": {
     "numReplicas": 1,
