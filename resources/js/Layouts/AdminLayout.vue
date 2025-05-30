@@ -161,7 +161,7 @@
                   Tandai semua dibaca
                 </button>
               </div>
-              <div class="max-h-96 overflow-y-auto">
+              <div class="max-h-96 overflow-y-auto custom-scrollbar">
                 <div v-if="isLoadingNotifications" class="p-4 text-center">
                   <div class="inline-block animate-spin rounded-full h-6 w-6 border-b-2 border-primary"></div>
                   <p class="mt-2 text-sm text-muted-foreground">Memuat notifikasi...</p>
@@ -225,7 +225,7 @@
         </div>
       </header>
 
-      <div class="flex flex-1 flex-col gap-4 p-4 pt-0">
+      <div class="flex flex-1 flex-col gap-4 p-4 pt-0 custom-scrollbar">
         <slot />
       </div>
     </SidebarInset>
