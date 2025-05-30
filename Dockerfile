@@ -1,4 +1,8 @@
-FROM php:8.2-cli
+# Use PHP 8.2 with Apache for production
+FROM php:8.2-apache
+
+# Set working directory
+WORKDIR /var/www/html
 
 # Install system dependencies
 RUN apt-get update && apt-get install -y \
@@ -7,40 +11,48 @@ RUN apt-get update && apt-get install -y \
     libpng-dev \
     libonig-dev \
     libxml2-dev \
+    libzip-dev \
     zip \
     unzip \
     nodejs \
     npm \
-    bash
-
-# Install PHP extensions
-RUN docker-php-ext-install pdo_mysql mbstring exif pcntl bcmath gd
+    && docker-php-ext-install pdo_mysql mbstring exif pcntl bcmath gd zip \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/*
 
 # Install Composer
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 
-# Set working directory
-WORKDIR /var/www/html
+# Copy composer files
+COPY composer.json composer.lock ./
 
-# Copy application
+# Install PHP dependencies
+RUN composer install --no-dev --optimize-autoloader --no-scripts
+
+# Copy package files
+COPY package.json package-lock.json ./
+
+# Install Node dependencies and build assets
+RUN npm install && npm run build
+
+# Copy application code
 COPY . .
 
-# Install dependencies
-RUN composer install --no-dev --optimize-autoloader
-RUN npm ci && npm run build
+# Set permissions
+RUN chown -R www-data:www-data /var/www/html \
+    && chmod -R 755 /var/www/html \
+    && chmod -R 775 /var/www/html/storage \
+    && chmod -R 775 /var/www/html/bootstrap/cache
 
-# Clear caches and set permissions
-RUN php artisan config:clear || true
-RUN php artisan cache:clear || true
-RUN php artisan route:clear || true
-RUN php artisan view:clear || true
-RUN chmod -R 755 storage bootstrap/cache
-
-# Make startup script executable
-RUN chmod +x start.sh
+# Configure Apache
+RUN a2enmod rewrite
+COPY .docker/apache.conf /etc/apache2/sites-available/000-default.conf
 
 # Expose port
-EXPOSE $PORT
+EXPOSE 80
 
-# Start application with startup script
-CMD ["bash", "start.sh"] 
+# Use Docker start script
+COPY start-docker.sh /usr/local/bin/start-docker.sh
+RUN chmod +x /usr/local/bin/start-docker.sh
+
+CMD ["/usr/local/bin/start-docker.sh"] 
