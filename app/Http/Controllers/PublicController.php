@@ -9,6 +9,7 @@ use App\Models\Report;
 use App\Models\WaterLevelHistory;
 use App\Models\ThresholdSetting;
 use App\Models\PumpHouseThresholdSetting;
+use App\Services\ImageUploadService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 use Inertia\Inertia;
@@ -16,6 +17,13 @@ use Carbon\Carbon;
 
 class PublicController extends Controller
 {
+    protected $imageUploadService;
+
+    public function __construct(ImageUploadService $imageUploadService)
+    {
+        $this->imageUploadService = $imageUploadService;
+    }
+
     /**
      * Landing page untuk masyarakat
      */
@@ -121,13 +129,13 @@ class PublicController extends Controller
             return back()->withErrors($validator)->withInput();
         }
         
-        // Handle image uploads
+        // Handle image uploads using ImageUploadService
         $imagePaths = [];
         if ($request->hasFile('images')) {
-            foreach ($request->file('images') as $image) {
-                $path = $image->store('reports', 'public');
-                $imagePaths[] = asset('storage/' . $path);
-            }
+            $imagePaths = $this->imageUploadService->uploadMultipleImages(
+                $request->file('images'), 
+                'reports'
+            );
         }
         
         $report = new Report();

@@ -5,6 +5,10 @@ chmod -R 755 /app
 chmod -R 775 storage
 chmod -R 775 bootstrap/cache
 
+# Create storage link for public access
+echo "Creating storage link..."
+php artisan storage:link
+
 # Wait for database to be ready
 echo "Waiting for database connection..."
 timeout=30
