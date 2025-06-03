@@ -21,10 +21,12 @@ class Report extends Model
         'reporter_email',
         'location',
         'images',
+        'cloudinary_ids',
     ];
 
     protected $casts = [
         'images' => 'array',
+        'cloudinary_ids' => 'array',
     ];
 
     public function pump_house(): BelongsTo

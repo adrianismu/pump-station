@@ -75,6 +75,15 @@ Route::middleware(['auth', 'verified'])->prefix('admin')->name('admin.')->group(
         Route::get('/water-level/{pumpHouse}/history', [WaterLevelController::class, 'history'])->name('water-level.history')->middleware('pump.access:read');
         Route::get('/water-level/{pumpHouse}/chart-data', [WaterLevelController::class, 'getChartData'])->name('water-level.chart-data')->middleware('pump.access:read');
         
+        // Pump House Threshold Management - Petugas bisa akses sesuai pump house mereka
+        Route::get('/pump-house-thresholds', [PumpHouseThresholdController::class, 'index'])->name('pump-house-thresholds.index');
+        Route::get('/pump-house-thresholds/{pumpHouse}', [PumpHouseThresholdController::class, 'show'])->name('pump-house-thresholds.show')->middleware('pump.access:read');
+        Route::get('/pump-house-thresholds/{pumpHouse}/edit', [PumpHouseThresholdController::class, 'edit'])->name('pump-house-thresholds.edit')->middleware('pump.access:write');
+        Route::put('/pump-house-thresholds/{pumpHouse}', [PumpHouseThresholdController::class, 'update'])->name('pump-house-thresholds.update')->middleware('pump.access:write');
+        Route::post('/pump-house-thresholds/{pumpHouse}/copy-default', [PumpHouseThresholdController::class, 'copyFromDefault'])->name('pump-house-thresholds.copy-default')->middleware('pump.access:write');
+        Route::post('/pump-house-thresholds/{pumpHouse}/reset-default', [PumpHouseThresholdController::class, 'resetToDefault'])->name('pump-house-thresholds.reset-default')->middleware('pump.access:write');
+        Route::delete('/pump-house-thresholds/{pumpHouse}/thresholds/{threshold}', [PumpHouseThresholdController::class, 'destroy'])->name('pump-house-thresholds.destroy')->middleware('pump.access:write');
+        
         // Notifications - Petugas bisa lihat notifikasi sesuai pump house mereka
         Route::get('/notifications', [NotificationsController::class, 'index'])->name('notifications');
         Route::get('/notifications/api', [NotificationsController::class, 'apiIndex'])->name('notifications.api');
@@ -161,15 +170,6 @@ Route::middleware(['auth', 'verified'])->prefix('admin')->name('admin.')->group(
         
         // Threshold Settings Management - Admin only
         Route::resource('threshold-settings', ThresholdSettingController::class);
-        
-        // Pump House Threshold Management - Admin only
-        Route::get('/pump-house-thresholds', [PumpHouseThresholdController::class, 'index'])->name('pump-house-thresholds.index');
-        Route::get('/pump-house-thresholds/{pumpHouse}', [PumpHouseThresholdController::class, 'show'])->name('pump-house-thresholds.show');
-        Route::get('/pump-house-thresholds/{pumpHouse}/edit', [PumpHouseThresholdController::class, 'edit'])->name('pump-house-thresholds.edit');
-        Route::put('/pump-house-thresholds/{pumpHouse}', [PumpHouseThresholdController::class, 'update'])->name('pump-house-thresholds.update');
-        Route::post('/pump-house-thresholds/{pumpHouse}/copy-default', [PumpHouseThresholdController::class, 'copyFromDefault'])->name('pump-house-thresholds.copy-default');
-        Route::post('/pump-house-thresholds/{pumpHouse}/reset-default', [PumpHouseThresholdController::class, 'resetToDefault'])->name('pump-house-thresholds.reset-default');
-        Route::delete('/pump-house-thresholds/{pumpHouse}/thresholds/{threshold}', [PumpHouseThresholdController::class, 'destroy'])->name('pump-house-thresholds.destroy');
         
         // User Pump House Access Management - Admin only
         Route::get('/user-pump-house', [UserPumpHouseController::class, 'index'])->name('user-pump-house.index');

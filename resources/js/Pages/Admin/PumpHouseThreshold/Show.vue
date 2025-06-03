@@ -7,6 +7,9 @@
           <h1 class="text-3xl font-bold tracking-tight">Detail Threshold</h1>
           <p class="text-muted-foreground">
             Pengaturan threshold untuk {{ pumpHouse.name }}
+            <Badge v-if="!isAdmin" variant="outline" class="ml-2">
+              {{ canWrite ? 'Akses Tulis' : 'Akses Baca' }}
+            </Badge>
           </p>
         </div>
         <div class="flex items-center gap-2">
@@ -16,11 +19,16 @@
               Kembali
             </Link>
           </Button>
-          <Button as-child>
+          <!-- Conditional Edit Button -->
+          <Button v-if="canWrite" as-child>
             <Link :href="route('admin.pump-house-thresholds.edit', pumpHouse.id)">
               <Settings class="w-4 h-4 mr-2" />
               Edit Threshold
             </Link>
+          </Button>
+          <Button v-else variant="outline" disabled :title="'Anda tidak memiliki akses untuk mengedit threshold rumah pompa ini'">
+            <Settings class="w-4 h-4 mr-2" />
+            Baca Saja
           </Button>
         </div>
       </div>
@@ -127,12 +135,18 @@
             <p class="text-muted-foreground mb-4">
               Rumah pompa ini belum memiliki threshold khusus dan menggunakan pengaturan global.
             </p>
-            <Button as-child>
+            <!-- Conditional Create Button -->
+            <Button v-if="canWrite" as-child>
               <Link :href="route('admin.pump-house-thresholds.edit', pumpHouse.id)">
                 <Plus class="w-4 h-4 mr-2" />
                 Buat Threshold Khusus
               </Link>
             </Button>
+            <div v-else class="text-center">
+              <p class="text-sm text-muted-foreground">
+                Anda tidak memiliki akses untuk membuat threshold khusus
+              </p>
+            </div>
           </div>
 
           <div v-else class="space-y-4">
@@ -425,6 +439,14 @@ const props = defineProps({
   totalHistoryCount: {
     type: Number,
     default: 0
+  },
+  isAdmin: {
+    type: Boolean,
+    default: false
+  },
+  canWrite: {
+    type: Boolean,
+    default: false
   }
 });
 

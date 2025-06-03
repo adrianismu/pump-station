@@ -13,17 +13,73 @@ class PumpHouseThresholdController extends Controller
 {
     public function index()
     {
-        $pumpHouses = PumpHouse::with(['threshold_settings' => function($query) {
-            $query->orderBy('water_level', 'asc');
-        }])->get();
+        $user = auth()->user();
+        
+        if ($user->isAdmin()) {
+            // Admin bisa akses semua pump house
+            $pumpHouses = PumpHouse::with(['threshold_settings' => function($query) {
+                $query->orderBy('water_level', 'asc');
+            }])->get();
+            
+            // Add access info for admin (always full access)
+            $pumpHouses = $pumpHouses->map(function($pumpHouse) {
+                $pumpHouse->user_access = [
+                    'level' => 'admin',
+                    'can_read' => true,
+                    'can_write' => true,
+                    'can_admin' => true,
+                ];
+                return $pumpHouse;
+            });
+        } else {
+            // Petugas hanya bisa akses pump house yang ditugaskan
+            $pumpHouses = PumpHouse::with(['threshold_settings' => function($query) {
+                $query->orderBy('water_level', 'asc');
+            }])
+            ->whereHas('users', function($query) use ($user) {
+                $query->where('users.id', $user->id)
+                      ->where('user_pump_house.is_active', true)
+                      ->where(function($q) {
+                          $q->whereNull('user_pump_house.expires_at')
+                            ->orWhere('user_pump_house.expires_at', '>', now());
+                      });
+            })
+            ->get();
+            
+            // Add detailed access info for each pump house
+            $pumpHouses = $pumpHouses->map(function($pumpHouse) use ($user) {
+                $userAccess = $user->allPumpHouses()
+                    ->where('pump_houses.id', $pumpHouse->id)
+                    ->first();
+                
+                $accessLevel = $userAccess ? $userAccess->pivot->access_level : 'read';
+                
+                $pumpHouse->user_access = [
+                    'level' => $accessLevel,
+                    'can_read' => true, // Minimal access
+                    'can_write' => in_array($accessLevel, ['write', 'admin']),
+                    'can_admin' => $accessLevel === 'admin',
+                ];
+                return $pumpHouse;
+            });
+        }
 
         return Inertia::render('Admin/PumpHouseThreshold/Index', [
             'pumpHouses' => $pumpHouses,
+            'userRole' => $user->role,
+            'isAdmin' => $user->isAdmin(),
         ]);
     }
 
     public function show($pumpHouseId)
     {
+        $user = auth()->user();
+        
+        // Authorization check
+        if (!$user->isAdmin() && !$user->hasAccessToPumpHouse($pumpHouseId, 'read')) {
+            abort(403, 'Anda tidak memiliki akses ke rumah pompa ini.');
+        }
+        
         $pumpHouse = PumpHouse::with(['threshold_settings' => function($query) {
             $query->orderBy('water_level', 'asc');
         }, 'waterLevelHistory' => function($query) {
@@ -55,11 +111,21 @@ class PumpHouseThresholdController extends Controller
             'recentHistory' => $recentHistory,
             'totalHistoryCount' => $totalHistoryCount,
             'globalThresholds' => $globalThresholds,
+            'userRole' => $user->role,
+            'isAdmin' => $user->isAdmin(),
+            'canWrite' => $user->isAdmin() || $user->hasAccessToPumpHouse($pumpHouseId, 'write'),
         ]);
     }
 
     public function edit($pumpHouseId)
     {
+        $user = auth()->user();
+        
+        // Authorization check - perlu akses write
+        if (!$user->isAdmin() && !$user->hasAccessToPumpHouse($pumpHouseId, 'write')) {
+            abort(403, 'Anda tidak memiliki akses write ke rumah pompa ini.');
+        }
+        
         $pumpHouse = PumpHouse::with(['threshold_settings' => function($query) {
             $query->orderBy('water_level', 'asc');
         }])->findOrFail($pumpHouseId);
@@ -72,11 +138,20 @@ class PumpHouseThresholdController extends Controller
 
         return Inertia::render('Admin/PumpHouseThreshold/Edit', [
             'pumpHouse' => $pumpHouse,
+            'userRole' => $user->role,
+            'isAdmin' => $user->isAdmin(),
         ]);
     }
 
     public function update(Request $request, $pumpHouseId)
     {
+        $user = auth()->user();
+        
+        // Authorization check - perlu akses write
+        if (!$user->isAdmin() && !$user->hasAccessToPumpHouse($pumpHouseId, 'write')) {
+            abort(403, 'Anda tidak memiliki akses write ke rumah pompa ini.');
+        }
+        
         $pumpHouse = PumpHouse::findOrFail($pumpHouseId);
         
         $request->validate([
@@ -124,6 +199,13 @@ class PumpHouseThresholdController extends Controller
 
     public function copyFromDefault($pumpHouseId)
     {
+        $user = auth()->user();
+        
+        // Authorization check - perlu akses write
+        if (!$user->isAdmin() && !$user->hasAccessToPumpHouse($pumpHouseId, 'write')) {
+            abort(403, 'Anda tidak memiliki akses write ke rumah pompa ini.');
+        }
+        
         $pumpHouse = PumpHouse::findOrFail($pumpHouseId);
         
         PumpHouseThresholdSetting::copyDefaultThresholds($pumpHouseId);
@@ -134,6 +216,13 @@ class PumpHouseThresholdController extends Controller
 
     public function resetToDefault($pumpHouseId)
     {
+        $user = auth()->user();
+        
+        // Authorization check - perlu akses write
+        if (!$user->isAdmin() && !$user->hasAccessToPumpHouse($pumpHouseId, 'write')) {
+            abort(403, 'Anda tidak memiliki akses write ke rumah pompa ini.');
+        }
+        
         $pumpHouse = PumpHouse::findOrFail($pumpHouseId);
         
         // Delete existing thresholds
@@ -148,6 +237,13 @@ class PumpHouseThresholdController extends Controller
 
     public function destroy($pumpHouseId, $thresholdId)
     {
+        $user = auth()->user();
+        
+        // Authorization check - perlu akses write
+        if (!$user->isAdmin() && !$user->hasAccessToPumpHouse($pumpHouseId, 'write')) {
+            abort(403, 'Anda tidak memiliki akses write ke rumah pompa ini.');
+        }
+        
         $threshold = PumpHouseThresholdSetting::where('pump_house_id', $pumpHouseId)
             ->findOrFail($thresholdId);
         

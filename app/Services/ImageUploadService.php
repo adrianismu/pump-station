@@ -5,13 +5,15 @@ namespace App\Services;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
 use CloudinaryLabs\CloudinaryLaravel\Facades\Cloudinary;
+use Illuminate\Support\Facades\Log;
 
 class ImageUploadService
 {
     /**
      * Upload image to cloud storage (Cloudinary) or local storage as fallback
+     * Returns array with url and cloudinary_id if applicable
      */
-    public function uploadImage(UploadedFile $file, string $folder = 'uploads'): string
+    public function uploadImage(UploadedFile $file, string $folder = 'uploads'): array
     {
         try {
             // Try to upload to Cloudinary if configured
@@ -25,32 +27,75 @@ class ImageUploadService
                     ]
                 ]);
                 
-                return $result->getSecurePath();
+                return [
+                    'url' => $result->getSecurePath(),
+                    'cloudinary_id' => $result->getPublicId(),
+                    'is_cloudinary' => true
+                ];
             }
         } catch (\Exception $e) {
             // Log error but continue with local storage
-            \Log::warning('Cloudinary upload failed: ' . $e->getMessage());
+            Log::warning('Cloudinary upload failed: ' . $e->getMessage());
         }
         
         // Fallback to local storage
         $path = $file->store($folder, 'public');
-        return asset('storage/' . $path);
+        return [
+            'url' => asset('storage/' . $path),
+            'cloudinary_id' => null,
+            'is_cloudinary' => false
+        ];
     }
     
     /**
      * Upload multiple images
+     * Returns array of upload results
      */
     public function uploadMultipleImages(array $files, string $folder = 'uploads'): array
     {
-        $uploadedPaths = [];
+        $uploadedResults = [];
         
         foreach ($files as $file) {
             if ($file instanceof UploadedFile) {
-                $uploadedPaths[] = $this->uploadImage($file, $folder);
+                $uploadedResults[] = $this->uploadImage($file, $folder);
             }
         }
         
-        return $uploadedPaths;
+        return $uploadedResults;
+    }
+    
+    /**
+     * Upload image from URL (for migrating existing URLs to Cloudinary)
+     */
+    public function uploadFromUrl(string $imageUrl, string $folder = 'uploads'): array
+    {
+        try {
+            if ($this->isCloudinaryConfigured()) {
+                $result = Cloudinary::upload($imageUrl, [
+                    'folder' => $folder,
+                    'resource_type' => 'image',
+                    'transformation' => [
+                        'quality' => 'auto',
+                        'fetch_format' => 'auto'
+                    ]
+                ]);
+                
+                return [
+                    'url' => $result->getSecurePath(),
+                    'cloudinary_id' => $result->getPublicId(),
+                    'is_cloudinary' => true
+                ];
+            }
+        } catch (\Exception $e) {
+            Log::warning('Cloudinary upload from URL failed: ' . $e->getMessage());
+        }
+        
+        // Return original URL if Cloudinary upload fails
+        return [
+            'url' => $imageUrl,
+            'cloudinary_id' => null,
+            'is_cloudinary' => false
+        ];
     }
     
     /**
@@ -67,9 +112,15 @@ class ImageUploadService
     /**
      * Delete image from storage
      */
-    public function deleteImage(string $imageUrl): bool
+    public function deleteImage(string $imageUrl, ?string $cloudinaryId = null): bool
     {
         try {
+            // If we have cloudinary_id, use it to delete from Cloudinary
+            if ($cloudinaryId) {
+                Cloudinary::destroy($cloudinaryId);
+                return true;
+            }
+            
             // If it's a Cloudinary URL, extract public_id and delete from Cloudinary
             if (str_contains($imageUrl, 'cloudinary.com')) {
                 $publicId = $this->extractCloudinaryPublicId($imageUrl);
@@ -85,7 +136,7 @@ class ImageUploadService
                 return Storage::disk('public')->delete($path);
             }
         } catch (\Exception $e) {
-            \Log::warning('Image deletion failed: ' . $e->getMessage());
+            Log::warning('Image deletion failed: ' . $e->getMessage());
         }
         
         return false;
@@ -104,5 +155,29 @@ class ImageUploadService
         }
         
         return null;
+    }
+    
+    /**
+     * Get optimized image URL with transformations
+     */
+    public function getOptimizedUrl(string $cloudinaryId, array $transformations = []): string
+    {
+        if (!$this->isCloudinaryConfigured() || !$cloudinaryId) {
+            return '';
+        }
+        
+        try {
+            $defaultTransformations = [
+                'quality' => 'auto',
+                'fetch_format' => 'auto'
+            ];
+            
+            $transformations = array_merge($defaultTransformations, $transformations);
+            
+            return Cloudinary::getUrl($cloudinaryId, $transformations);
+        } catch (\Exception $e) {
+            Log::warning('Failed to generate optimized URL: ' . $e->getMessage());
+            return '';
+        }
     }
 } 

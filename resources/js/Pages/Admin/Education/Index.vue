@@ -64,8 +64,9 @@
           
           <div class="flex justify-between items-center">
             <div class="flex items-center gap-2">
-              <Eye class="h-4 w-4 text-muted-foreground" />
-              <span class="text-xs text-muted-foreground">{{ content.views }} pembaca</span>
+              <Badge :variant="content.published ? 'default' : 'secondary'">
+                {{ content.published ? 'Dipublikasikan' : 'Draft' }}
+              </Badge>
             </div>
             
             <div class="flex gap-2">
@@ -233,28 +234,6 @@ const showDeleteDialog = ref(false);
 const contentToDelete = ref(null);
 const isDeleting = ref(false);
 
-// Initialize totalViews and recentContentsCount to avoid conditional hook calls
-const totalViews = ref(0);
-const recentContentsCount = ref(0);
-
-// Computed properties
-const computedTotalViews = computed(() => {
-  return props.educationContents.reduce((total, content) => total + (content.views || 0), 0);
-});
-
-const computedRecentContentsCount = computed(() => {
-  const oneWeekAgo = new Date();
-  oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
-  
-  return props.educationContents.filter(content => {
-    const contentDate = new Date(content.date);
-    return contentDate >= oneWeekAgo;
-  }).length;
-});
-
-totalViews.value = computedTotalViews.value;
-recentContentsCount.value = computedRecentContentsCount.value;
-
 // Computed property for filtered content based on search query and type filter
 const filteredContent = computed(() => {
   if (!props.educationContents) return []; // Return empty if no contents
@@ -293,7 +272,7 @@ const paginatedContent = computed(() => {
 const getTypeVariant = (type) => {
   if (type === 'Artikel') return 'default';
   if (type === 'Video') return 'destructive';
-  if (type === 'Infografis') return 'warning';
+  if (type === 'Infografis') return 'secondary';
   return 'default';
 };
 

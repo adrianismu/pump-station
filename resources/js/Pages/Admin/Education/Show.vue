@@ -1,9 +1,11 @@
 <template>
     <div>
       <div class="flex items-center gap-2 mb-6">
-        <Button variant="outline" size="icon" @click="$router?.back?.()">
-          <ChevronLeft class="h-4 w-4" />
-        </Button>
+        <Link :href="route('admin.education')">
+          <Button variant="outline" size="icon">
+            <ChevronLeft class="h-4 w-4" />
+          </Button>
+        </Link>
         <h1 class="text-2xl font-bold">Detail Konten Edukasi</h1>
       </div>
   
@@ -25,10 +27,9 @@
                 <Calendar class="h-4 w-4 text-muted-foreground" />
                 <span class="text-sm text-muted-foreground">{{ formatDate(educationContent.date) }}</span>
                 <div class="flex-1"></div>
-                <div class="flex items-center gap-1">
-                  <Eye class="h-4 w-4 text-muted-foreground" />
-                  <span class="text-sm text-muted-foreground">{{ educationContent.views }} pembaca</span>
-                </div>
+                <Badge :variant="educationContent.published ? 'default' : 'secondary'">
+                  {{ educationContent.published ? 'Dipublikasikan' : 'Draft' }}
+                </Badge>
               </div>
               <h2 class="text-2xl font-semibold mb-4">{{ educationContent.title }}</h2>
               <p class="text-muted-foreground mb-4">{{ educationContent.description }}</p>
@@ -113,10 +114,12 @@
               <CardTitle>Tindakan Cepat</CardTitle>
             </CardHeader>
             <CardContent class="space-y-2">
-              <Button class="w-full justify-start" @click="openEditModal">
-                <Edit class="mr-2 h-4 w-4" />
-                Edit Konten
-              </Button>
+              <Link :href="route('admin.education.edit', educationContent.id)">
+                <Button class="w-full justify-start">
+                  <Edit class="mr-2 h-4 w-4" />
+                  Edit Konten
+                </Button>
+              </Link>
               <Button variant="outline" class="w-full justify-start" @click="openDeleteDialog">
                 <Trash2 class="mr-2 h-4 w-4" />
                 Hapus Konten
@@ -152,10 +155,11 @@
                   </div>
                 </div>
                 <div>
-                  <p class="text-sm text-muted-foreground mb-1">Jumlah Pembaca</p>
+                  <p class="text-sm text-muted-foreground mb-1">Status Publikasi</p>
                   <div class="flex items-center gap-2">
-                    <Eye class="h-4 w-4 text-muted-foreground" />
-                    <p class="font-medium">{{ educationContent.views }} pembaca</p>
+                    <Badge :variant="educationContent.published ? 'default' : 'secondary'">
+                      {{ educationContent.published ? 'Dipublikasikan' : 'Draft' }}
+                    </Badge>
                   </div>
                 </div>
                 <div>
@@ -168,93 +172,8 @@
               </div>
             </CardContent>
           </Card>
-  
-          <!-- Tags -->
-          <Card>
-            <CardHeader>
-              <CardTitle>Tag</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div class="flex flex-wrap gap-2">
-                <Badge variant="outline" v-for="(tag, index) in tags" :key="index">
-                  {{ tag }}
-                </Badge>
-              </div>
-            </CardContent>
-          </Card>
         </div>
       </div>
-  
-      <!-- Edit Modal -->
-      <Dialog :open="showEditModal" @update:open="showEditModal = $event">
-        <DialogContent class="sm:max-w-[600px]">
-          <DialogHeader>
-            <DialogTitle>Edit Konten Edukasi</DialogTitle>
-          </DialogHeader>
-          
-          <form @submit.prevent="submitEditForm">
-            <div class="grid gap-4 py-4">
-              <div class="grid gap-2">
-                <Label for="title">Judul</Label>
-                <Input id="title" v-model="form.title" required />
-              </div>
-              
-              <div class="grid gap-2">
-                <Label for="description">Deskripsi</Label>
-                <Textarea id="description" v-model="form.description" required />
-              </div>
-              
-              <div class="grid gap-2">
-                <Label for="type">Tipe Konten</Label>
-                <Select v-model="form.type">
-                  <SelectTrigger>
-                    <SelectValue placeholder="Pilih tipe konten" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="Artikel">Artikel</SelectItem>
-                    <SelectItem value="Video">Video</SelectItem>
-                    <SelectItem value="Infografis">Infografis</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              
-              <div class="grid gap-2">
-                <Label for="image">URL Gambar</Label>
-                <Input id="image" v-model="form.image" type="url" required />
-              </div>
-              
-              <div v-if="form.type === 'Video'" class="grid gap-2">
-                <Label for="video_url">URL Video</Label>
-                <Input id="video_url" v-model="form.video_url" type="url" placeholder="https://www.youtube.com/watch?v=..." />
-              </div>
-              
-              <div v-if="form.type === 'Infografis'" class="grid gap-2">
-                <Label for="infographic_url">URL Infografis</Label>
-                <Input id="infographic_url" v-model="form.infographic_url" type="url" placeholder="https://example.com/infographic.jpg" />
-              </div>
-              
-              <div class="grid gap-2">
-                <Label for="content">Konten</Label>
-                <Textarea id="content" v-model="form.content" rows="6" required />
-              </div>
-              
-              <div class="grid gap-2">
-                <Label for="tags">Tag (pisahkan dengan koma)</Label>
-                <Input id="tags" v-model="form.tags" placeholder="banjir, pompa air, edukasi" />
-              </div>
-            </div>
-            
-            <DialogFooter>
-              <Button type="button" variant="outline" @click="showEditModal = false">
-                Batal
-              </Button>
-              <Button type="submit" :disabled="form.processing">
-                {{ form.processing ? 'Menyimpan...' : 'Simpan Perubahan' }}
-              </Button>
-            </DialogFooter>
-          </form>
-        </DialogContent>
-      </Dialog>
   
       <!-- Delete Confirmation Dialog -->
       <AlertDialog :open="showDeleteDialog" @update:open="showDeleteDialog = $event">
@@ -277,13 +196,11 @@
   </template>
   
   <script setup>
-  import { ref, computed, onMounted } from "vue";
-  import { useForm } from "@inertiajs/vue3";
-  import { router, usePage } from '@inertiajs/vue3';
+  import { ref, computed } from "vue";
+  import { Link, router } from '@inertiajs/vue3';
   import {
     ChevronLeft,
     Calendar,
-    Eye,
     Edit,
     Trash2,
     FileQuestion,
@@ -303,14 +220,6 @@
   } from "@/Components/ui/card";
   
   import {
-    Dialog,
-    DialogContent,
-    DialogFooter,
-    DialogHeader,
-    DialogTitle,
-  } from "@/Components/ui/dialog";
-  
-  import {
     AlertDialog,
     AlertDialogAction,
     AlertDialogCancel,
@@ -321,18 +230,7 @@
     AlertDialogTitle,
   } from "@/Components/ui/alert-dialog";
   
-  import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
-  } from "@/Components/ui/select";
-  
   import { Button } from "@/Components/ui/button";
-  import { Input } from "@/Components/ui/input";
-  import { Textarea } from "@/Components/ui/textarea";
-  import { Label } from "@/Components/ui/label";
   import { Badge } from "@/Components/ui/badge";
   
   defineOptions({ layout: Layout });
@@ -349,22 +247,8 @@
   });
   
   // State
-  const showEditModal = ref(false);
   const showDeleteDialog = ref(false);
   const isDeleting = ref(false);
-  
-  // Form for editing education content
-  const form = useForm({
-    id: props.educationContent.id,
-    title: props.educationContent.title,
-    description: props.educationContent.description,
-    type: props.educationContent.type,
-    image: props.educationContent.image,
-    content: props.educationContent.content,
-    video_url: props.educationContent.video_url || '',
-    infographic_url: props.educationContent.infographic_url || '',
-    tags: (props.educationContent.tags || []).join(', '),
-  });
   
   // Computed properties
   const formattedContent = computed(() => {
@@ -376,15 +260,9 @@
       .join('');
   });
   
-  const tags = computed(() => {
-    return props.educationContent.tags || ['banjir', 'edukasi', 'pompa air'];
-  });
-  
   const relatedContent = computed(() => {
     return props.relatedContents.slice(0, 4);
   });
-  
-  const route = usePage().props.route;
   
   // Methods
   const formatDate = (dateString) => {
@@ -400,7 +278,7 @@
   const getTypeVariant = (type) => {
     if (type === 'Artikel') return 'default';
     if (type === 'Video') return 'destructive';
-    if (type === 'Infografis') return 'warning';
+    if (type === 'Infografis') return 'secondary';
     return 'default';
   };
   
@@ -420,22 +298,6 @@
   
   const navigateToContent = (id) => {
     router.visit(route('admin.education.show', id));
-  };
-  
-  const openEditModal = () => {
-    showEditModal.value = true;
-  };
-  
-  const submitEditForm = () => {
-    // Convert comma-separated tags to array before submitting
-    const formData = { ...form };
-    formData.tags = form.tags.split(',').map(tag => tag.trim()).filter(tag => tag);
-    
-    form.put(route('admin.education.update', props.educationContent.id), {
-      onSuccess: () => {
-        showEditModal.value = false;
-      },
-    });
   };
   
   const openDeleteDialog = () => {

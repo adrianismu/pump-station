@@ -72,10 +72,40 @@
         <!-- Main Content -->
         <div class="lg:col-span-3">
           <Card class="p-8">
-            <!-- Featured Image/Icon -->
+            <!-- Featured Image/Video/Icon -->
             <div class="aspect-video relative rounded-lg overflow-hidden mb-8">
+              <!-- Video Content for Video Type -->
+              <div v-if="content?.type === 'Video' && content?.video_url" class="w-full h-full">
+                <iframe 
+                  v-if="getYoutubeEmbedUrl(content.video_url)"
+                  :src="getYoutubeEmbedUrl(content.video_url)" 
+                  class="w-full h-full" 
+                  frameborder="0" 
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
+                  allowfullscreen
+                ></iframe>
+                <div v-else class="w-full h-full bg-gradient-to-br from-red-50 to-red-100 flex items-center justify-center">
+                  <div class="text-center p-8">
+                    <Video class="h-16 w-16 mx-auto text-red-600 mb-4" />
+                    <p class="text-red-600 font-medium">Video tidak dapat dimuat</p>
+                    <p class="text-sm text-red-500 mt-2">URL: {{ content.video_url }}</p>
+                  </div>
+                </div>
+              </div>
+              
+              <!-- Infographic Content for Infografis Type -->
+              <div v-else-if="content?.type === 'Infografis' && content?.infographic_url" class="w-full h-full">
+                <img 
+                  :src="content.infographic_url"
+                  :alt="content?.title || 'Infografis'"
+                  class="w-full h-full object-contain bg-gray-50"
+                  @error="$event.target.style.display = 'none'"
+                />
+              </div>
+              
+              <!-- Regular Image -->
               <img 
-                v-if="content?.image && content.image.startsWith('http')"
+                v-else-if="content?.image && content.image.startsWith('http')"
                 :src="content.image"
                 :alt="content?.title || 'Content Image'"
                 class="w-full h-full object-cover"
@@ -88,6 +118,8 @@
                 class="w-full h-full object-cover"
                 @error="$event.target.style.display = 'none'"
               />
+              
+              <!-- Default Icon -->
               <div 
                 v-else
                 class="w-full h-full bg-gradient-to-br from-blue-50 to-blue-100 flex items-center justify-center"
@@ -312,6 +344,20 @@ const formatContent = (content) => {
     .map(paragraph => `<p class="mb-4">${paragraph.replace(/\n/g, '<br>')}</p>`)
     .join('')
 }
+
+const getYoutubeEmbedUrl = (url) => {
+  if (!url) return null;
+  
+  // Extract video ID from YouTube URL
+  const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=)([^#&?]*).*/;
+  const match = url.match(regExp);
+  
+  if (match && match[2].length === 11) {
+    return `https://www.youtube.com/embed/${match[2]}`;
+  }
+  
+  return null;
+};
 
 const shareContent = (platform) => {
   if (!props.content) return

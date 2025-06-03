@@ -130,12 +130,21 @@ class PublicController extends Controller
         }
         
         // Handle image uploads using ImageUploadService
-        $imagePaths = [];
+        $imageUrls = [];
+        $cloudinaryIds = [];
+        
         if ($request->hasFile('images')) {
-            $imagePaths = $this->imageUploadService->uploadMultipleImages(
+            $uploadResults = $this->imageUploadService->uploadMultipleImages(
                 $request->file('images'), 
                 'reports'
             );
+            
+            foreach ($uploadResults as $result) {
+                $imageUrls[] = $result['url'];
+                if ($result['cloudinary_id']) {
+                    $cloudinaryIds[] = $result['cloudinary_id'];
+                }
+            }
         }
         
         $report = new Report();
@@ -146,7 +155,8 @@ class PublicController extends Controller
         $report->title = $request->title;
         $report->description = $request->description;
         $report->location = $request->location_detail ?? '';
-        $report->images = $imagePaths;
+        $report->images = $imageUrls;
+        $report->cloudinary_ids = $cloudinaryIds;
         $report->status = 'Belum Ditanggapi';
         $report->save();
         
@@ -164,12 +174,36 @@ class PublicController extends Controller
     /**
      * Halaman edukasi publik
      */
-    public function education()
+    public function education(Request $request)
     {
-        $educationContent = EducationContent::orderBy('created_at', 'desc')->paginate(12);
+        $query = EducationContent::where('published', true);
+        
+        // Apply search filter
+        if ($request->filled('search')) {
+            $searchTerm = $request->search;
+            $query->where(function($q) use ($searchTerm) {
+                $q->where('title', 'like', "%{$searchTerm}%")
+                  ->orWhere('description', 'like', "%{$searchTerm}%")
+                  ->orWhere('content', 'like', "%{$searchTerm}%");
+            });
+        }
+        
+        // Apply type filter
+        if ($request->filled('type') && $request->type !== 'all') {
+            $query->where('type', $request->type);
+        }
+        
+        // Order by date and paginate
+        $educationContent = $query->orderBy('date', 'desc')
+                                  ->paginate(12)
+                                  ->withQueryString(); // Preserve query parameters in pagination links
         
         return Inertia::render('Public/Education', [
             'educationContent' => $educationContent,
+            'filters' => [
+                'search' => $request->search,
+                'type' => $request->type,
+            ],
         ]);
     }
     
@@ -178,13 +212,27 @@ class PublicController extends Controller
      */
     public function educationDetail($id)
     {
-        $content = EducationContent::findOrFail($id);
+        $content = EducationContent::where('published', true)->findOrFail($id);
         
-        // Get related content
+        // Get related content (published only)
         $relatedContent = EducationContent::where('id', '!=', $id)
+            ->where('published', true)
             ->where('type', $content->type)
+            ->orderBy('date', 'desc')
             ->take(3)
             ->get();
+        
+        // If not enough related content by type, get more recent content
+        if ($relatedContent->count() < 3) {
+            $additionalContent = EducationContent::where('id', '!=', $id)
+                ->where('published', true)
+                ->whereNotIn('id', $relatedContent->pluck('id')->toArray())
+                ->orderBy('date', 'desc')
+                ->take(3 - $relatedContent->count())
+                ->get();
+                
+            $relatedContent = $relatedContent->concat($additionalContent);
+        }
         
         return Inertia::render('Public/EducationDetail', [
             'content' => $content,

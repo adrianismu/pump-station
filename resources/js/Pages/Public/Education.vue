@@ -36,74 +36,17 @@
         </div>
       </div>
 
-      <!-- Featured Content -->
-      <section v-if="featuredContent.length > 0" class="mb-16">
-        <h2 class="text-2xl font-bold mb-8 text-center">Konten Unggulan</h2>
-        <div class="grid gap-8 lg:grid-cols-2 max-w-6xl mx-auto">
-          <Card 
-            v-for="content in featuredContent" 
-            :key="content.id"
-            class="overflow-hidden hover:shadow-lg transition-shadow cursor-pointer"
-            @click="$inertia.visit(route('public.education.detail', content.id))"
-          >
-            <!-- Image or Icon -->
-            <div class="aspect-video relative">
-              <img 
-                v-if="content.image && content.image.startsWith('http')"
-                :src="content.image"
-                :alt="content.title"
-                class="w-full h-full object-cover"
-                @error="$event.target.style.display = 'none'"
-              />
-              <img 
-                v-else-if="content.image && !content.image.startsWith('http')"
-                :src="`/storage/${content.image}`"
-                :alt="content.title"
-                class="w-full h-full object-cover"
-                @error="$event.target.style.display = 'none'"
-              />
-              <div 
-                v-else
-                class="w-full h-full bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center"
-              >
-                <component 
-                  :is="getContentIcon(content.type)" 
-                  class="h-16 w-16 text-white"
-                />
-              </div>
-            </div>
-            <div class="p-6">
-              <div class="flex items-center gap-2 mb-3">
-                <Badge :variant="getBadgeVariant(content.type)">
-                  {{ content.type }}
-                </Badge>
-                <span class="text-sm text-muted-foreground">
-                  {{ formatDate(content.created_at) }}
-                </span>
-              </div>
-              <h3 class="text-xl font-semibold mb-3 line-clamp-2">{{ content.title }}</h3>
-              <p class="text-muted-foreground mb-4 line-clamp-3">
-                {{ content.description || content.content.substring(0, 200) }}...
-              </p>
-              <Button variant="outline" size="sm">
-                <ExternalLink class="mr-2 h-4 w-4" />
-                Baca Selengkapnya
-              </Button>
-            </div>
-          </Card>
-        </div>
-      </section>
 
       <!-- All Content -->
       <section>
         <div class="flex items-center justify-between mb-8">
           <h2 class="text-2xl font-bold">Semua Konten Edukasi</h2>
           <div class="text-sm text-muted-foreground">
-            {{ filteredContent.length }} konten ditemukan
+            {{ total }} konten ditemukan
           </div>
         </div>
 
-        <div v-if="filteredContent.length > 0" class="grid gap-6 md:grid-cols-2 lg:grid-cols-3 max-w-6xl mx-auto">
+        <div v-if="paginatedContent.length > 0" class="grid gap-6 md:grid-cols-2 lg:grid-cols-3 max-w-6xl mx-auto">
           <Card 
             v-for="content in paginatedContent" 
             :key="content.id"
@@ -173,42 +116,44 @@
         </div>
 
         <!-- Pagination -->
-        <div v-if="filteredContent.length > 0 && totalPages > 1" class="flex justify-center mt-12">
-          <Pagination
-            :items-per-page="itemsPerPage"
-            :total="filteredContent.length"
-            :sibling-count="1"
-            show-edges
-            :default-page="currentPage"
-            v-model:page="currentPage"
-          >
-            <template v-slot:default="{ page }">
-              <PaginationList v-if="page?.items" class="flex items-center gap-1">
-                <PaginationFirst />
-                <PaginationPrev />
-                <template v-for="(item, index) in page.items" :key="index">
-                  <PaginationListItem
-                    v-if="item?.type === 'page'"
-                    :value="item.value"
-                    as-child
-                  >
-                    <Button
-                      class="w-9 h-9 p-0"
-                      :variant="item.value === page.current ? 'default' : 'outline'"
-                    >
-                      {{ item.value }}
-                    </Button>
-                  </PaginationListItem>
-                  <PaginationEllipsis
-                    v-else
-                    :index="index"
-                  />
-                </template>
-                <PaginationNext />
-                <PaginationLast />
-              </PaginationList>
-            </template>
-          </Pagination>
+        <div v-if="totalPages > 1" class="flex justify-center mt-12">
+          <div class="flex items-center space-x-2">
+            <!-- Previous Button -->
+            <Button 
+              variant="outline" 
+              size="sm"
+              :disabled="currentPage <= 1"
+              @click="changePage(currentPage - 1)"
+            >
+              ← Sebelumnya
+            </Button>
+            
+            <!-- Page Numbers -->
+            <div class="flex items-center space-x-1">
+              <template v-for="page in getPageNumbers()" :key="page">
+                <Button
+                  v-if="page !== '...'"
+                  :variant="page === currentPage ? 'default' : 'outline'"
+                  size="sm"
+                  class="min-w-[40px]"
+                  @click="changePage(page)"
+                >
+                  {{ page }}
+                </Button>
+                <span v-else class="px-2 text-muted-foreground">...</span>
+              </template>
+            </div>
+            
+            <!-- Next Button -->
+            <Button 
+              variant="outline" 
+              size="sm"
+              :disabled="currentPage >= totalPages"
+              @click="changePage(currentPage + 1)"
+            >
+              Selanjutnya →
+            </Button>
+          </div>
         </div>
       </section>
 
@@ -237,7 +182,7 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, watch } from 'vue'
 import { router } from '@inertiajs/vue3'
 import PublicLayout from '@/Layouts/PublicLayout.vue'
 import { Button } from '@/Components/ui/button'
@@ -251,16 +196,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/Components/ui/select'
-import {
-  Pagination,
-  PaginationEllipsis,
-  PaginationFirst,
-  PaginationLast,
-  PaginationList,
-  PaginationListItem,
-  PaginationNext,
-  PaginationPrev,
-} from '@/Components/ui/pagination'
 import { 
   Search, 
   ExternalLink, 
@@ -278,58 +213,33 @@ defineOptions({ layout: PublicLayout })
 
 const props = defineProps({
   educationContent: Object, // Paginated data from Laravel
+  filters: Object, // Current filters
 })
 
-const searchQuery = ref('')
-const selectedType = ref('all')
-const currentPage = ref(1)
-const itemsPerPage = 9
+// Search and filter state
+const searchQuery = ref(props.filters?.search || '')
+const selectedType = ref(props.filters?.type || 'all')
 
-// Featured content (first 2 items)
-const featuredContent = computed(() => {
-  if (!props.educationContent?.data) return []
-  return props.educationContent.data.slice(0, 2)
-})
 
-// All content for filtering
-const allContent = computed(() => {
+
+// All content for current page
+const paginatedContent = computed(() => {
   if (!props.educationContent?.data) return []
   return props.educationContent.data
 })
 
-// Filtered content based on search and type
-const filteredContent = computed(() => {
-  let filtered = allContent.value || []
-
-  if (searchQuery.value) {
-    const query = searchQuery.value.toLowerCase()
-    filtered = filtered.filter(content => 
-      content?.title?.toLowerCase().includes(query) ||
-      content?.content?.toLowerCase().includes(query)
-    )
-  }
-
-  if (selectedType.value && selectedType.value !== 'all') {
-    filtered = filtered.filter(content => content?.type === selectedType.value)
-  }
-
-  return filtered
-})
-
-// Paginated content
-const totalPages = computed(() => Math.ceil(filteredContent.value.length / itemsPerPage))
-
-const paginatedContent = computed(() => {
-  const start = (currentPage.value - 1) * itemsPerPage
-  return filteredContent.value.slice(start, start + itemsPerPage)
-})
+// Pagination info
+const currentPage = computed(() => props.educationContent?.current_page || 1)
+const totalPages = computed(() => props.educationContent?.last_page || 1)
+const total = computed(() => props.educationContent?.total || 0)
+const perPage = computed(() => props.educationContent?.per_page || 12)
 
 // Use composable untuk date formatting
 const { formatDate } = useDateUtils()
 
 // Helper functions
 const getContentIcon = (type) => {
-  if (!type) return BookOpen // Default jika type null
+  if (!type) return BookOpen
   
   const lowerType = type.toLowerCase()
   const iconMap = {
@@ -342,14 +252,14 @@ const getContentIcon = (type) => {
 }
 
 const getBadgeVariant = (type) => {
-  if (!type) return 'default' // Default jika type null
+  if (!type) return 'default'
   
   const lowerType = type.toLowerCase()
   const variantMap = {
     'artikel': 'default',
-    'video': 'secondary',
+    'video': 'destructive',
     'panduan': 'outline',
-    'infografis': 'destructive',
+    'infografis': 'secondary',
   }
   return variantMap[lowerType] || 'default'
 }
@@ -357,17 +267,84 @@ const getBadgeVariant = (type) => {
 const resetFilters = () => {
   searchQuery.value = ''
   selectedType.value = 'all'
-  currentPage.value = 1
+  performSearch()
 }
 
-// Reset page when filters change
-const resetPage = () => {
-  currentPage.value = 1
+const performSearch = () => {
+  const searchParams = new URLSearchParams()
+  
+  if (searchQuery.value) {
+    searchParams.append('search', searchQuery.value)
+  }
+  
+  if (selectedType.value && selectedType.value !== 'all') {
+    searchParams.append('type', selectedType.value)
+  }
+  
+  const url = route('public.education') + (searchParams.toString() ? '?' + searchParams.toString() : '')
+  router.visit(url, { preserveState: true })
 }
 
-// Watch for filter changes
-import { watch } from 'vue'
-watch([searchQuery, selectedType], resetPage)
+const changePage = (page) => {
+  const searchParams = new URLSearchParams(window.location.search)
+  searchParams.set('page', page)
+  
+  const url = route('public.education') + '?' + searchParams.toString()
+  router.visit(url, { preserveState: true })
+}
+
+// Debounced search
+let searchTimeout = null
+const debouncedSearch = () => {
+  clearTimeout(searchTimeout)
+  searchTimeout = setTimeout(() => {
+    performSearch()
+  }, 500)
+}
+
+// Watch for changes
+watch(searchQuery, debouncedSearch)
+watch(selectedType, performSearch)
+
+// Generate page numbers for pagination
+const getPageNumbers = () => {
+  const pages = []
+  const current = currentPage.value
+  const total = totalPages.value
+  
+  if (total <= 7) {
+    // Show all pages if total is 7 or less
+    for (let i = 1; i <= total; i++) {
+      pages.push(i)
+    }
+  } else {
+    // Show first page
+    pages.push(1)
+    
+    if (current > 4) {
+      pages.push('...')
+    }
+    
+    // Show pages around current
+    const start = Math.max(2, current - 1)
+    const end = Math.min(total - 1, current + 1)
+    
+    for (let i = start; i <= end; i++) {
+      pages.push(i)
+    }
+    
+    if (current < total - 3) {
+      pages.push('...')
+    }
+    
+    // Show last page
+    if (total > 1) {
+      pages.push(total)
+    }
+  }
+  
+  return pages
+}
 </script>
 
 <style scoped>

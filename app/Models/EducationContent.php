@@ -14,20 +14,18 @@ class EducationContent extends Model
         'description',
         'type',
         'image',
+        'cloudinary_id',
         'content',
         'video_url',
         'infographic_url',
-        'tags',
+        'infographic_cloudinary_id',
         'date',
-        'views',
         'published',
         'updated_at',
     ];
     
     protected $casts = [
-        'tags' => 'array',
         'date' => 'datetime',
         'published' => 'boolean',
-        'views' => 'integer',
     ];
 }

@@ -1,9 +1,11 @@
 <template>
     <div>
       <div class="flex items-center gap-2 mb-6">
-        <Button variant="outline" size="icon" @click="$router?.back?.()">
-          <ChevronLeft class="h-4 w-4" />
-        </Button>
+        <Link :href="route('admin.education')">
+          <Button variant="outline" size="icon">
+            <ChevronLeft class="h-4 w-4" />
+          </Button>
+        </Link>
         <h1 class="text-2xl font-bold">Tambah Konten Edukasi Baru</h1>
       </div>
   
@@ -62,17 +64,48 @@
                 </div>
   
                 <div>
-                  <Label for="image">URL Gambar Thumbnail</Label>
-                  <Input 
-                    id="image" 
-                    v-model="form.image" 
-                    type="url" 
-                    placeholder="https://example.com/image.jpg" 
-                    :class="{ 'border-destructive': form.errors.image }"
-                    required
-                  />
-                  <p v-if="form.errors.image" class="text-destructive text-sm mt-1">{{ form.errors.image }}</p>
-                  <p class="text-xs text-muted-foreground mt-1">Masukkan URL gambar untuk thumbnail konten</p>
+                  <Label for="image">Upload Gambar Thumbnail</Label>
+                  <div class="space-y-4">
+                    <Input 
+                      id="image" 
+                      type="file"
+                      accept="image/*"
+                      @change="handleImageUpload"
+                      :class="{ 'border-destructive': form.errors.image }"
+                      class="file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-primary file:text-primary-foreground hover:file:bg-primary/90"
+                      required
+                    />
+                    <p v-if="form.errors.image" class="text-destructive text-sm">{{ form.errors.image }}</p>
+                    <p class="text-xs text-muted-foreground">
+                      Upload gambar thumbnail konten (format: JPEG, PNG, JPG, GIF - maksimal 2MB)
+                    </p>
+                    
+                    <!-- Image Preview -->
+                    <div v-if="imagePreview" class="relative inline-block">
+                      <img 
+                        :src="imagePreview" 
+                        alt="Preview Gambar" 
+                        class="h-32 w-48 object-cover rounded-lg border"
+                      />
+                      <Button
+                        type="button"
+                        variant="destructive"
+                        size="sm"
+                        class="absolute top-1 right-1 h-6 w-6 p-0"
+                        @click="removeImage"
+                      >
+                        ×
+                      </Button>
+                    </div>
+                    
+                    <!-- Placeholder when no image -->
+                    <div v-else class="h-32 w-48 bg-muted rounded-lg border-2 border-dashed border-muted-foreground/25 flex items-center justify-center">
+                      <div class="text-center">
+                        <ImageIcon class="h-8 w-8 mx-auto text-muted-foreground/50 mb-2" />
+                        <p class="text-sm text-muted-foreground">Preview gambar akan muncul di sini</p>
+                      </div>
+                    </div>
+                  </div>
                 </div>
   
                 <div v-if="isVideo">
@@ -89,20 +122,53 @@
                 </div>
   
                 <div v-if="isInfografis">
-                  <Label for="infographic_url">URL Infografis</Label>
-                  <Input 
-                    id="infographic_url" 
-                    v-model="form.infographic_url" 
-                    type="url" 
-                    placeholder="https://example.com/infographic.jpg" 
-                    :class="{ 'border-destructive': form.errors.infographic_url }"
-                  />
-                  <p v-if="form.errors.infographic_url" class="text-destructive text-sm mt-1">{{ form.errors.infographic_url }}</p>
-                  <p class="text-xs text-muted-foreground mt-1">Masukkan URL gambar infografis (opsional)</p>
+                  <Label for="infographic">Upload File Infografis</Label>
+                  <div class="space-y-4">
+                    <Input 
+                      id="infographic" 
+                      type="file"
+                      accept="image/*,.pdf"
+                      @change="handleInfographicUpload"
+                      :class="{ 'border-destructive': form.errors.infographic }"
+                      class="file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-primary file:text-primary-foreground hover:file:bg-primary/90"
+                    />
+                    <p v-if="form.errors.infographic" class="text-destructive text-sm">{{ form.errors.infographic }}</p>
+                    <p class="text-xs text-muted-foreground">
+                      Upload file infografis (format: JPEG, PNG, JPG, GIF, PDF - maksimal 5MB) - Opsional
+                    </p>
+                    
+                    <!-- Infographic Preview -->
+                    <div v-if="infographicPreview" class="relative inline-block">
+                      <div v-if="infographicPreview.type === 'image'">
+                        <img 
+                          :src="infographicPreview.url" 
+                          alt="Preview Infografis" 
+                          class="h-32 w-48 object-cover rounded-lg border"
+                        />
+                      </div>
+                      <div v-else class="h-32 w-48 bg-muted rounded-lg border flex items-center justify-center">
+                        <div class="text-center">
+                          <svg class="h-8 w-8 mx-auto text-muted-foreground/50 mb-2" fill="currentColor" viewBox="0 0 20 20">
+                            <path d="M4 18h12V6h-4V2H4v16zm-2 1V1a1 1 0 011-1h8.414a1 1 0 01.707.293l4.586 4.586A1 1 0 0117 6v13a1 1 0 01-1 1H3a1 1 0 01-1-1z"/>
+                          </svg>
+                          <p class="text-sm text-muted-foreground">{{ infographicPreview.name }}</p>
+                        </div>
+                      </div>
+                      <Button
+                        type="button"
+                        variant="destructive"
+                        size="sm"
+                        class="absolute top-1 right-1 h-6 w-6 p-0"
+                        @click="removeInfographic"
+                      >
+                        ×
+                      </Button>
+                    </div>
+                  </div>
                 </div>
               </div>
   
-              <!-- Content and Tags -->
+              <!-- Content -->
               <div class="space-y-4">
                 <div>
                   <Label for="content">Konten</Label>
@@ -117,35 +183,6 @@
                   <p v-if="form.errors.content" class="text-destructive text-sm mt-1">{{ form.errors.content }}</p>
                   <p class="text-xs text-muted-foreground mt-1">Untuk artikel, masukkan konten lengkap. Untuk video dan infografis, masukkan deskripsi lengkap.</p>
                 </div>
-  
-                <div>
-                  <Label for="tags">Tag (pisahkan dengan koma)</Label>
-                  <Input 
-                    id="tags" 
-                    v-model="form.tags" 
-                    placeholder="banjir, pompa air, edukasi" 
-                    :class="{ 'border-destructive': form.errors.tags }"
-                  />
-                  <p v-if="form.errors.tags" class="text-destructive text-sm mt-1">{{ form.errors.tags }}</p>
-                  <p class="text-xs text-muted-foreground mt-1">Tambahkan tag untuk memudahkan pencarian</p>
-                </div>
-  
-                <!-- <div>
-                  <Label for="published">Status Publikasi</Label>
-                  <Select 
-                    v-model="form.published" 
-                    :class="{ 'border-destructive': form.errors.published }"
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Pilih status publikasi" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem :value="true">Publikasikan Sekarang</SelectItem>
-                      <SelectItem :value="false">Simpan sebagai Draft</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  <p v-if="form.errors.published" class="text-destructive text-sm mt-1">{{ form.errors.published }}</p>
-                </div> -->
               </div>
             </div>
   
@@ -153,9 +190,9 @@
             <div>
               <h3 class="text-lg font-medium mb-4">Preview</h3>
               <div class="border border-border rounded-md p-4">
-                <div v-if="form.image" class="mb-4">
+                <div v-if="imagePreview" class="mb-4">
                   <p class="text-sm text-muted-foreground mb-2">Thumbnail:</p>
-                  <img :src="form.image" alt="Preview" class="h-48 w-full object-cover rounded-md" />
+                  <img :src="imagePreview" alt="Preview" class="h-48 w-full object-cover rounded-md" />
                 </div>
                 
                 <div v-if="form.type === 'Video' && getYoutubeEmbedUrl(form.video_url)" class="mb-4">
@@ -171,9 +208,14 @@
                   </div>
                 </div>
                 
-                <div v-if="form.type === 'Infografis' && form.infographic_url" class="mb-4">
+                <div v-if="form.type === 'Infografis' && infographicPreview" class="mb-4">
                   <p class="text-sm text-muted-foreground mb-2">Infografis:</p>
-                  <img :src="form.infographic_url" alt="Infografis Preview" class="max-w-full rounded-md" />
+                  <div v-if="infographicPreview.type === 'image'">
+                    <img :src="infographicPreview.url" alt="Infografis Preview" class="max-w-full rounded-md" />
+                  </div>
+                  <div v-else class="p-4 bg-muted rounded-md">
+                    <p class="text-sm">File: {{ infographicPreview.name }}</p>
+                  </div>
                 </div>
                 
                 <div v-if="form.title" class="mb-2">
@@ -185,22 +227,15 @@
                   <p class="text-sm text-muted-foreground mb-1">Deskripsi:</p>
                   <p>{{ form.description }}</p>
                 </div>
-                
-                <div v-if="form.tags" class="mb-2">
-                  <p class="text-sm text-muted-foreground mb-1">Tag:</p>
-                  <div class="flex flex-wrap gap-2">
-                    <Badge variant="outline" v-for="(tag, index) in form.tags.split(',').map(t => t.trim()).filter(t => t)" :key="index">
-                      {{ tag }}
-                    </Badge>
-                  </div>
-                </div>
               </div>
             </div>
   
             <div class="flex justify-end gap-4 pt-4">
-              <Button type="button" variant="outline" @click="$router?.back?.()">
-                Batal
-              </Button>
+              <Link :href="route('admin.education')">
+                <Button type="button" variant="outline">
+                  Batal
+                </Button>
+              </Link>
               <Button type="submit" :disabled="form.processing">
                 {{ form.processing ? 'Menyimpan...' : (form.published ? 'Publikasikan Konten' : 'Simpan sebagai Draft') }}
               </Button>
@@ -212,10 +247,9 @@
   </template>
   
   <script setup>
-  import { ref, computed } from "vue";
-  import { useForm } from "@inertiajs/vue3";
-  import { router } from '@inertiajs/vue3';
-  import { ChevronLeft, Video } from "lucide-vue-next";
+  import { ref, computed, reactive } from "vue";
+  import { router, Link } from '@inertiajs/vue3';
+  import { ChevronLeft, Video, Image as ImageIcon } from "lucide-vue-next";
   import Layout from "@/Layouts/AdminLayout.vue";
   
   import {
@@ -238,25 +272,87 @@
   import { Input } from "@/Components/ui/input";
   import { Textarea } from "@/Components/ui/textarea";
   import { Label } from "@/Components/ui/label";
-  import { Badge } from "@/Components/ui/badge";
   
   defineOptions({ layout: Layout });
   
   // Form for creating education content
-  const form = useForm({
+  const form = reactive({
     title: "",
     description: "",
     type: "Artikel",
-    image: "",
+    image: null,
     content: "",
     video_url: "",
-    infographic_url: "",
-    tags: "",
+    infographic: null,
     published: true,
+    errors: {},
+    processing: false
   });
+  
+  const imagePreview = ref(null)
+  const infographicPreview = ref(null)
   
   const isVideo = computed(() => form.type === 'Video');
   const isInfografis = computed(() => form.type === 'Infografis');
+  
+  const handleImageUpload = (event) => {
+    const file = event.target.files[0]
+    if (file) {
+      form.image = file
+      
+      // Create preview
+      const reader = new FileReader()
+      reader.onload = (e) => {
+        imagePreview.value = e.target.result
+      }
+      reader.readAsDataURL(file)
+    }
+  }
+  
+  const removeImage = () => {
+    form.image = null
+    imagePreview.value = null
+    // Reset file input
+    const fileInput = document.getElementById('image')
+    if (fileInput) {
+      fileInput.value = ''
+    }
+  }
+  
+  const handleInfographicUpload = (event) => {
+    const file = event.target.files[0]
+    if (file) {
+      form.infographic = file
+      
+      // Create preview
+      if (file.type.startsWith('image/')) {
+        const reader = new FileReader()
+        reader.onload = (e) => {
+          infographicPreview.value = {
+            type: 'image',
+            url: e.target.result,
+            name: file.name
+          }
+        }
+        reader.readAsDataURL(file)
+      } else {
+        infographicPreview.value = {
+          type: 'file',
+          name: file.name
+        }
+      }
+    }
+  }
+  
+  const removeInfographic = () => {
+    form.infographic = null
+    infographicPreview.value = null
+    // Reset file input
+    const fileInput = document.getElementById('infographic')
+    if (fileInput) {
+      fileInput.value = ''
+    }
+  }
   
   // Methods
   const getYoutubeEmbedUrl = (url) => {
@@ -274,20 +370,47 @@
   };
   
   const submitForm = () => {
-    // Create a new form data object to avoid modifying the original form
-    const formData = { ...form };
+    form.processing = true
     
-    // Convert comma-separated tags string to an array
-    // This is the key fix - we're setting the tags property directly on the form object
-    form.tags = form.tags.split(',')
-      .map(tag => tag.trim())
-      .filter(tag => tag);
+    // Create FormData for file upload
+    const formData = new FormData()
     
-    form.post(route('admin.education.store'), {
-      onSuccess: () => {
-        router.visit(route('admin.education'));
+    // Add all form fields with proper type conversion
+    Object.keys(form).forEach(key => {
+      if (key !== 'errors' && key !== 'processing') {
+        let value = form[key]
+        
+        // Skip null, undefined, or empty string values except for published
+        if (key === 'published') {
+          // Convert published to proper boolean
+          formData.append(key, value ? '1' : '0')
+        } else if (value !== null && value !== '' && value !== undefined) {
+          formData.append(key, value)
+        }
+      }
+    })
+    
+    // Debug form data
+    console.log('Form data being sent:')
+    for (let [key, value] of formData.entries()) {
+      console.log(key, value)
+    }
+    
+    router.post(route('admin.education.store'), formData, {
+      forceFormData: true,
+      onError: (errors) => {
+        console.error('Validation errors:', errors)
+        form.errors = errors
+        form.processing = false
       },
-    });
+      onSuccess: () => {
+        console.log('Success!')
+        form.processing = false
+      },
+      onFinish: () => {
+        form.processing = false
+      }
+    })
   };
   </script>
   

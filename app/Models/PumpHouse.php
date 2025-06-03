@@ -20,6 +20,7 @@ class PumpHouse extends Model
         'water_level_warning',
         'water_level_critical',
         'image',
+        'cloudinary_id',
         'built_year',
         'manager_name',
         'contact_phone',

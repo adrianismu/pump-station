@@ -5,12 +5,28 @@
       <div class="flex justify-between items-center">
         <div>
           <h1 class="text-3xl font-bold">Threshold per Rumah Pompa</h1>
-          <p class="text-muted-foreground">Kelola batas peringatan ketinggian air untuk setiap rumah pompa</p>
+          <p class="text-muted-foreground">
+            {{ isAdmin ? 'Kelola batas peringatan ketinggian air untuk setiap rumah pompa' : 'Kelola batas peringatan ketinggian air untuk rumah pompa yang ditugaskan' }}
+          </p>
         </div>
+        <!-- Role Badge untuk petugas -->
+        <Badge v-if="!isAdmin" variant="outline" class="text-sm">
+          Petugas - {{ pumpHouses.length }} Rumah Pompa
+        </Badge>
+      </div>
+
+      <!-- Empty State untuk petugas tanpa akses -->
+      <div v-if="pumpHouses.length === 0" class="text-center py-16">
+        <AlertCircle class="w-16 h-16 text-muted-foreground mx-auto mb-4" />
+        <h3 class="text-lg font-semibold mb-2">Tidak Ada Rumah Pompa yang Ditugaskan</h3>
+        <p class="text-muted-foreground mb-4">
+          Anda belum ditugaskan untuk mengelola rumah pompa manapun. 
+          Hubungi administrator untuk mendapatkan akses.
+        </p>
       </div>
 
       <!-- Pump Houses Grid -->
-      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      <div v-else class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         <Card v-for="pumpHouse in pumpHouses" :key="pumpHouse.id" class="relative">
           <CardHeader class="pb-3">
             <div class="flex items-center justify-between">
@@ -79,19 +95,36 @@
                   Lihat
                 </Button>
               </Link>
-              <Link :href="route('admin.pump-house-thresholds.edit', pumpHouse.id)" class="flex-1">
+              <!-- Tombol atur ditampilkan sesuai akses -->
+              <Link 
+                v-if="isAdmin || canEditPumpHouse(pumpHouse.id)"
+                :href="route('admin.pump-house-thresholds.edit', pumpHouse.id)" 
+                class="flex-1"
+              >
                 <Button size="sm" class="w-full">
                   <Settings class="w-3 h-3 mr-1" />
                   Atur
                 </Button>
               </Link>
+              <!-- Disabled button untuk read-only -->
+              <Button 
+                v-else
+                size="sm" 
+                variant="outline" 
+                disabled 
+                class="flex-1 opacity-50"
+                :title="'Anda hanya memiliki akses baca untuk rumah pompa ini'"
+              >
+                <Settings class="w-3 h-3 mr-1" />
+                Baca Saja
+              </Button>
             </div>
           </CardContent>
         </Card>
       </div>
 
       <!-- Info Card -->
-      <Card>
+      <Card v-if="pumpHouses.length > 0">
         <CardHeader>
           <CardTitle class="flex items-center gap-2">
             <Info class="w-5 h-5" />
@@ -110,12 +143,15 @@
               </ul>
             </div>
             <div>
-              <h4 class="font-medium mb-2">Cara Penggunaan</h4>
+              <h4 class="font-medium mb-2">{{ isAdmin ? 'Cara Penggunaan' : 'Akses Petugas' }}</h4>
               <ul class="text-sm text-muted-foreground space-y-1">
-                <li>• Klik "Atur" untuk mengkonfigurasi threshold khusus</li>
-                <li>• Gunakan "Salin dari Default" untuk memulai dengan template</li>
-                <li>• Sesuaikan nilai threshold sesuai kebutuhan lokasi</li>
-                <li>• Sistem akan otomatis menggunakan threshold khusus jika tersedia</li>
+                <li v-if="isAdmin">• Klik "Atur" untuk mengkonfigurasi threshold khusus</li>
+                <li v-if="isAdmin">• Gunakan "Salin dari Default" untuk memulai dengan template</li>
+                <li v-if="isAdmin">• Sesuaikan nilai threshold sesuai kebutuhan lokasi</li>
+                <li v-if="isAdmin">• Sistem akan otomatis menggunakan threshold khusus jika tersedia</li>
+                <li v-if="!isAdmin">• Anda hanya dapat mengatur threshold untuk rumah pompa yang ditugaskan</li>
+                <li v-if="!isAdmin">• Akses berbeda-beda tergantung level otoritas (baca/tulis)</li>
+                <li v-if="!isAdmin">• Hubungi administrator untuk perubahan akses</li>
               </ul>
             </div>
           </div>
@@ -136,6 +172,8 @@ import { Eye, Settings, Info, AlertCircle } from 'lucide-vue-next';
 
 const props = defineProps({
   pumpHouses: Array,
+  userRole: String,
+  isAdmin: Boolean,
 });
 
 const formatDate = (dateString) => {
@@ -198,6 +236,17 @@ const getCurrentLevelStatus = (pumpHouse) => {
   if (currentLevel >= 2.5) return 'Kritis';
   if (currentLevel >= 2.0) return 'Peringatan';
   return 'Normal';
+};
+
+// Fungsi untuk cek apakah petugas bisa edit pump house tertentu
+// Ini akan diimplementasi berdasarkan data user akses yang dikirim dari controller
+const canEditPumpHouse = (pumpHouseId) => {
+  // Admin selalu bisa edit
+  if (props.isAdmin) return true;
+  
+  // Cari pump house dan cek akses write
+  const pumpHouse = props.pumpHouses.find(p => p.id === pumpHouseId);
+  return pumpHouse?.user_access?.can_write || false;
 };
 </script> 
  
