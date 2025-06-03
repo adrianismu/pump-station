@@ -333,7 +333,7 @@
             <TableBody>
               <TableRow v-for="pumpHouse in paginatedPumpHouses" :key="pumpHouse.id" class="hover:bg-muted/50">
                 <TableCell>
-                  <Link :href="route('admin.pump-houses.show', pumpHouse.id)" class="hover:text-primary">
+                  <Link :href="route('admin.database.show', pumpHouse.id)" class="hover:text-primary">
                     {{ pumpHouse.name }}
                   </Link>
                 </TableCell>

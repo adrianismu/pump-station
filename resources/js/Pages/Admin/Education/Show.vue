@@ -3,8 +3,8 @@
       <div class="flex items-center gap-2 mb-6">
         <Link :href="route('admin.education')">
           <Button variant="outline" size="icon">
-            <ChevronLeft class="h-4 w-4" />
-          </Button>
+          <ChevronLeft class="h-4 w-4" />
+        </Button>
         </Link>
         <h1 class="text-2xl font-bold">Detail Konten Edukasi</h1>
       </div>
@@ -116,9 +116,9 @@
             <CardContent class="space-y-2">
               <Link :href="route('admin.education.edit', educationContent.id)">
                 <Button class="w-full justify-start">
-                  <Edit class="mr-2 h-4 w-4" />
-                  Edit Konten
-                </Button>
+                <Edit class="mr-2 h-4 w-4" />
+                Edit Konten
+              </Button>
               </Link>
               <Button variant="outline" class="w-full justify-start" @click="openDeleteDialog">
                 <Trash2 class="mr-2 h-4 w-4" />

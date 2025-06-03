@@ -25,7 +25,39 @@ class DatabaseController extends Controller
             'pumpHouses' => $pumpHouses,
         ]);
     }
-    
+
+    public function show($id)
+    {
+        $user = auth()->user();
+        
+        // Authorization check untuk detail page
+        if (!$user->isAdmin()) {
+            // Petugas hanya bisa akses pump house yang ditugaskan
+            if (!$user->hasAccessToPumpHouse($id, 'read')) {
+                abort(403, 'Anda tidak memiliki akses ke rumah pompa ini.');
+            }
+        }
+
+        $pumpHouse = PumpHouse::with([
+            'waterLevelHistory' => function($query) {
+                $query->orderBy('recorded_at', 'desc')->limit(100);
+            },
+            'threshold_settings' => function($query) {
+                $query->where('is_active', true)->orderBy('water_level', 'asc');
+            }
+        ])->findOrFail($id);
+
+        // Tentukan apakah user bisa edit
+        $canEdit = $user->isAdmin() || $user->hasAccessToPumpHouse($id, 'write');
+
+        return Inertia::render('Admin/Database/Show', [
+            'pumpHouse' => $pumpHouse,
+            'waterLevelHistory' => $pumpHouse->waterLevelHistory,
+            'activeThresholds' => $pumpHouse->threshold_settings,
+            'canEdit' => $canEdit,
+        ]);
+    }
+
     public function create()
     {
         return Inertia::render('Admin/Database/Create');
@@ -47,6 +79,7 @@ class DatabaseController extends Controller
             'contact_phone' => 'required|string|max:20',
             'contact_email' => 'required|email|max:255',
             'staff_count' => 'required|integer|min:1',
+            'description' => 'nullable|string',
         ]);
         
         // Upload image using ImageUploadService
@@ -66,6 +99,13 @@ class DatabaseController extends Controller
     
     public function edit(PumpHouse $pumpHouse)
     {
+        $user = auth()->user();
+        
+        // Authorization check untuk edit
+        if (!$user->isAdmin() && !$user->hasAccessToPumpHouse($pumpHouse->id, 'write')) {
+            abort(403, 'Anda tidak memiliki akses untuk mengedit rumah pompa ini.');
+        }
+
         return Inertia::render('Admin/Database/Edit', [
             'pumpHouse' => $pumpHouse,
         ]);
@@ -73,6 +113,13 @@ class DatabaseController extends Controller
     
     public function update(Request $request, PumpHouse $pumpHouse)
     {
+        $user = auth()->user();
+        
+        // Authorization check untuk update
+        if (!$user->isAdmin() && !$user->hasAccessToPumpHouse($pumpHouse->id, 'write')) {
+            abort(403, 'Anda tidak memiliki akses untuk mengedit rumah pompa ini.');
+        }
+
         $validated = $request->validate([
             'name' => 'required|string|max:255',
             'address' => 'required|string',
@@ -83,10 +130,11 @@ class DatabaseController extends Controller
             'pump_count' => 'required|integer|min:1',
             'image' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
             'built_year' => 'required|integer|min:1900|max:2100',
-            'manager_name' => 'required|string|max:255',
-            'contact_phone' => 'required|string|max:20',
-            'contact_email' => 'required|email|max:255',
-            'staff_count' => 'required|integer|min:1',
+            'manager_name' => 'nullable|string|max:255',
+            'contact_phone' => 'nullable|string|max:20',
+            'contact_email' => 'nullable|email|max:255',
+            'staff_count' => 'nullable|integer|min:1',
+            'description' => 'nullable|string',
         ]);
         
         // Handle image update if new image is uploaded
@@ -113,7 +161,32 @@ class DatabaseController extends Controller
         
         $pumpHouse->update($validated);
         
-        return redirect()->route('admin.database')->with('success', 'Rumah pompa berhasil diperbarui.');
+        return redirect()->route('admin.database.show', $pumpHouse->id)
+            ->with('success', 'Rumah pompa berhasil diperbarui.');
+    }
+
+    public function toggleStatus(Request $request, PumpHouse $pumpHouse)
+    {
+        $user = auth()->user();
+        
+        // Authorization check untuk toggle status
+        if (!$user->isAdmin() && !$user->hasAccessToPumpHouse($pumpHouse->id, 'write')) {
+            abort(403, 'Anda tidak memiliki akses untuk mengubah status rumah pompa ini.');
+        }
+
+        $validated = $request->validate([
+            'status' => 'required|string|in:Aktif,Perlu Perhatian,Tidak Aktif',
+        ]);
+
+        $pumpHouse->update([
+            'status' => $validated['status'],
+            'last_updated' => now(),
+        ]);
+
+        $statusText = $validated['status'] === 'Aktif' ? 'diaktifkan' : ($validated['status'] === 'Perlu Perhatian' ? 'diperlukan perhatian' : 'dinonaktifkan');
+        
+        return redirect()->route('admin.database.show', $pumpHouse->id)
+            ->with('success', "Rumah pompa berhasil {$statusText}.");
     }
     
     public function destroy(PumpHouse $pumpHouse)

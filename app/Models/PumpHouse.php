@@ -84,4 +84,29 @@ class PumpHouse extends Model
     {
         return $this->hasMany(PumpHouseThresholdSetting::class);
     }
+
+    /**
+     * Relasi many-to-many dengan User (petugas yang di-assign)
+     */
+    public function users()
+    {
+        return $this->belongsToMany(User::class, 'user_pump_house')
+                    ->withPivot(['access_level', 'is_active', 'assigned_at', 'expires_at', 'notes'])
+                    ->withTimestamps()
+                    ->wherePivot('is_active', true)
+                    ->where(function($query) {
+                        $query->whereNull('user_pump_house.expires_at')
+                              ->orWhere('user_pump_house.expires_at', '>', now());
+                    });
+    }
+
+    /**
+     * Relasi untuk semua users (termasuk yang tidak aktif)
+     */
+    public function allUsers()
+    {
+        return $this->belongsToMany(User::class, 'user_pump_house')
+                    ->withPivot(['access_level', 'is_active', 'assigned_at', 'expires_at', 'notes'])
+                    ->withTimestamps();
+    }
 }

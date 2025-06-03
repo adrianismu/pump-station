@@ -68,7 +68,13 @@ Route::middleware(['auth', 'verified'])->prefix('admin')->name('admin.')->group(
     // Routes yang bisa diakses admin dan petugas (dengan pembatasan)
     Route::middleware(['pump.access'])->group(function () {
         Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
+        
+        // Database Map and Detail - Dapat diakses admin dan petugas sesuai akses
         Route::get('/map', [MapController::class, 'index'])->name('map');
+        Route::get('/database/{id}', [DatabaseController::class, 'show'])->name('database.show')->middleware('pump.access:read');
+        Route::get('/database/{pumpHouse}/edit', [DatabaseController::class, 'edit'])->name('database.edit')->middleware('pump.access:write');
+        Route::put('/database/{pumpHouse}', [DatabaseController::class, 'update'])->name('database.update')->middleware('pump.access:write');
+        Route::put('/database/{pumpHouse}/toggle-status', [DatabaseController::class, 'toggleStatus'])->name('database.toggle-status')->middleware('pump.access:write');
         
         // Water Level Management Routes - Petugas bisa akses sesuai pump house mereka
         Route::resource('water-level', WaterLevelController::class);
@@ -95,43 +101,6 @@ Route::middleware(['auth', 'verified'])->prefix('admin')->name('admin.')->group(
         Route::get('/reports/{report}', [ReportsController::class, 'show'])->name('reports.show');
         Route::put('/reports/{report}', [ReportsController::class, 'update'])->name('reports.update');
         Route::post('/reports/{report}/responses', [ReportsController::class, 'addResponse'])->name('reports.responses.store');
-        
-        // Pump House Detail - Petugas bisa lihat detail pump house mereka
-        Route::get('/pump-houses/{pumpHouse}', function ($id) {
-            $user = auth()->user();
-            
-            // Cek akses untuk petugas
-            if (!$user->isAdmin() && !$user->hasAccessToPumpHouse($id)) {
-                abort(403, 'Anda tidak memiliki akses ke rumah pompa ini.');
-            }
-            
-            $pumpHouse = \App\Models\PumpHouse::findOrFail($id);
-            
-            // Get recent water level history (last 60 days, limit 200 records for filtering)
-            $waterLevelHistory = \App\Models\WaterLevelHistory::where('pump_house_id', $id)
-                ->where('recorded_at', '>=', now()->subDays(60))
-                ->orderBy('recorded_at', 'desc')
-                ->limit(200)
-                ->get();
-            
-            // Get pump house specific thresholds
-            $thresholds = \App\Models\PumpHouseThresholdSetting::where('pump_house_id', $id)
-                ->where('is_active', true)
-                ->orderBy('water_level', 'asc')
-                ->get();
-
-            // Get global thresholds as fallback
-            $globalThresholds = \App\Models\ThresholdSetting::where('is_active', true)
-                ->orderBy('water_level', 'asc')
-                ->get();
-            
-            return Inertia::render('Admin/PumpHouseDetail', [
-                'pumpHouse' => $pumpHouse,
-                'waterLevelHistory' => $waterLevelHistory,
-                'thresholds' => $thresholds,
-                'globalThresholds' => $globalThresholds,
-            ]);
-        })->name('pump-houses.show')->middleware('pump.access:read');
     });
     
     // Routes khusus admin saja
@@ -152,8 +121,6 @@ Route::middleware(['auth', 'verified'])->prefix('admin')->name('admin.')->group(
         Route::get('/database', [DatabaseController::class, 'index'])->name('database');
         Route::get('/database/create', [DatabaseController::class, 'create'])->name('database.create');
         Route::post('/database', [DatabaseController::class, 'store'])->name('database.store');
-        Route::get('/database/{pumpHouse}/edit', [DatabaseController::class, 'edit'])->name('database.edit');
-        Route::put('/database/{pumpHouse}', [DatabaseController::class, 'update'])->name('database.update');
         Route::delete('/database/{pumpHouse}', [DatabaseController::class, 'destroy'])->name('database.destroy');
         
         // Reports Management - Admin only actions

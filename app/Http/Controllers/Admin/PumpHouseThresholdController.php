@@ -17,9 +17,14 @@ class PumpHouseThresholdController extends Controller
         
         if ($user->isAdmin()) {
             // Admin bisa akses semua pump house
-            $pumpHouses = PumpHouse::with(['threshold_settings' => function($query) {
-                $query->orderBy('water_level', 'asc');
-            }])->get();
+            $pumpHouses = PumpHouse::with([
+                'threshold_settings' => function($query) {
+                    $query->orderBy('water_level', 'asc');
+                },
+                'waterLevelHistory' => function($query) {
+                    $query->orderBy('recorded_at', 'desc')->limit(1);
+                }
+            ])->get();
             
             // Add access info for admin (always full access)
             $pumpHouses = $pumpHouses->map(function($pumpHouse) {
@@ -29,13 +34,24 @@ class PumpHouseThresholdController extends Controller
                     'can_write' => true,
                     'can_admin' => true,
                 ];
+                
+                // Add current water level data
+                $latestWaterLevel = $pumpHouse->waterLevelHistory->first();
+                $pumpHouse->current_water_level = $latestWaterLevel?->water_level ?? null;
+                $pumpHouse->last_recorded_at = $latestWaterLevel?->recorded_at ?? null;
+                
                 return $pumpHouse;
             });
         } else {
             // Petugas hanya bisa akses pump house yang ditugaskan
-            $pumpHouses = PumpHouse::with(['threshold_settings' => function($query) {
-                $query->orderBy('water_level', 'asc');
-            }])
+            $pumpHouses = PumpHouse::with([
+                'threshold_settings' => function($query) {
+                    $query->orderBy('water_level', 'asc');
+                },
+                'waterLevelHistory' => function($query) {
+                    $query->orderBy('recorded_at', 'desc')->limit(1);
+                }
+            ])
             ->whereHas('users', function($query) use ($user) {
                 $query->where('users.id', $user->id)
                       ->where('user_pump_house.is_active', true)
@@ -60,6 +76,12 @@ class PumpHouseThresholdController extends Controller
                     'can_write' => in_array($accessLevel, ['write', 'admin']),
                     'can_admin' => $accessLevel === 'admin',
                 ];
+                
+                // Add current water level data
+                $latestWaterLevel = $pumpHouse->waterLevelHistory->first();
+                $pumpHouse->current_water_level = $latestWaterLevel?->water_level ?? null;
+                $pumpHouse->last_recorded_at = $latestWaterLevel?->recorded_at ?? null;
+                
                 return $pumpHouse;
             });
         }

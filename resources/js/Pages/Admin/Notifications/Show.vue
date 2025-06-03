@@ -322,7 +322,7 @@
   
   const viewPumpHouseDetail = () => {
     if (props.alert.pump_house?.id) {
-      router.visit(route('admin.pump-houses.show', props.alert.pump_house.id))
+      router.visit(route('admin.database.show', props.alert.pump_house.id))
     }
   }
   

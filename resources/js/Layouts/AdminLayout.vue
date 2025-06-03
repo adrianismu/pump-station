@@ -334,14 +334,14 @@ const currentPageTitle = computed(() => {
     'Admin/WaterLevel/Index': 'Input Ketinggian Air',
     'Admin/Map': 'Peta Monitoring',
     'Admin/Database/Index': 'Database Rumah Pompa',
+    'Admin/Database/Show': 'Detail Rumah Pompa',
     'Admin/Reports/Index': 'Laporan Publik',
     'Admin/Notifications/Index': 'Notifikasi & Alert',
     'Admin/ThresholdSettings/Index': 'Pengaturan Threshold Global',
     'Admin/PumpHouseThreshold/Index': 'Threshold per Lokasi',
     'Admin/Education/Index': 'Manajemen Konten Edukasi',
     'Admin/UserPumpHouse/Index': 'Manajemen Akses Petugas',
-    'Admin/UserPumpHouse/Show': 'Detail Akses Petugas',
-    'Admin/PumpHouseDetail': 'Detail Rumah Pompa'
+    'Admin/UserPumpHouse/Show': 'Detail Akses Petugas'
   };
   return titleMap[component] || 'Dashboard';
 });
@@ -421,7 +421,7 @@ const navigationSections = computed(() => {
           icon: CloudRain, 
           route: 'admin.pump-house-thresholds.index', 
           component: 'PumpHouseThreshold/Index',
-          roles: ['admin']
+          roles: ['admin', 'petugas']
         },
         { 
           label: 'Akses Petugas', 

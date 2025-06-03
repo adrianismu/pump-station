@@ -90,17 +90,22 @@ class User extends Authenticatable
             return true;
         }
 
-        // Cek akses spesifik untuk petugas
-        $access = $this->pumpHouses()
+        // Cek akses spesifik untuk petugas menggunakan allPumpHouses untuk menghindari double filtering
+        $access = $this->allPumpHouses()
                       ->where('pump_houses.id', $pumpHouseId)
+                      ->wherePivot('is_active', true)
+                      ->where(function($query) {
+                          $query->whereNull('user_pump_house.expires_at')
+                                ->orWhere('user_pump_house.expires_at', '>', now());
+                      })
                       ->first();
 
         if (!$access) {
             return false;
         }
 
-        // Mapping level akses
-        $levels = ['read' => 1, 'write' => 2, 'admin' => 3];
+        // Mapping level akses (admin dihapus, write sekarang adalah level tertinggi)
+        $levels = ['read' => 1, 'write' => 2];
         $userLevel = $levels[$access->pivot->access_level] ?? 0;
         $requiredLevel = $levels[$accessLevel] ?? 1;
 
@@ -128,8 +133,8 @@ class User extends Authenticatable
             return PumpHouse::pluck('id')->toArray();
         }
 
-        // Mapping level akses
-        $levels = ['read' => 1, 'write' => 2, 'admin' => 3];
+        // Mapping level akses (admin dihapus, write sekarang adalah level tertinggi)
+        $levels = ['read' => 1, 'write' => 2];
         $requiredLevel = $levels[$accessLevel] ?? 1;
 
         return $this->pumpHouses()
@@ -153,13 +158,5 @@ class User extends Authenticatable
     public function canWriteToPumpHouse($pumpHouseId)
     {
         return $this->hasAccessToPumpHouse($pumpHouseId, 'write');
-    }
-
-    /**
-     * Cek apakah user dapat melakukan admin operation pada pump house
-     */
-    public function canAdminPumpHouse($pumpHouseId)
-    {
-        return $this->hasAccessToPumpHouse($pumpHouseId, 'admin');
     }
 }

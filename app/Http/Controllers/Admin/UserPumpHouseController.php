@@ -45,7 +45,7 @@ class UserPumpHouseController extends Controller
     {
         $request->validate([
             'pump_house_id' => 'required|exists:pump_houses,id',
-            'access_level' => 'required|in:read,write,admin',
+            'access_level' => 'required|in:read,write',
             'expires_at' => 'nullable|date|after:today',
             'notes' => 'nullable|string|max:500',
         ]);
@@ -73,7 +73,7 @@ class UserPumpHouseController extends Controller
     public function updateAccess(Request $request, $userId, $pumpHouseId)
     {
         $request->validate([
-            'access_level' => 'required|in:read,write,admin',
+            'access_level' => 'required|in:read,write',
             'is_active' => 'required|boolean',
             'expires_at' => 'nullable|date',
             'notes' => 'nullable|string|max:500',
@@ -106,7 +106,7 @@ class UserPumpHouseController extends Controller
             'user_ids.*' => 'exists:users,id',
             'pump_house_ids' => 'required|array',
             'pump_house_ids.*' => 'exists:pump_houses,id',
-            'access_level' => 'required|in:read,write,admin',
+            'access_level' => 'required|in:read,write',
             'expires_at' => 'nullable|date|after:today',
             'notes' => 'nullable|string|max:500',
         ]);

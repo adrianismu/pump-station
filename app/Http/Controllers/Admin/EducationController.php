@@ -77,11 +77,11 @@ class EducationController extends Controller
     public function show(EducationContent $educationContent)
     {
         // Get related content based on type and recent content
-        $relatedContents = EducationContent::where('id', '!=', $educationContent->id)
+            $relatedContents = EducationContent::where('id', '!=', $educationContent->id)
             ->where('type', $educationContent->type)
-            ->orderBy('date', 'desc')
-            ->limit(4)
-            ->get();
+                ->orderBy('date', 'desc')
+                ->limit(4)
+                ->get();
         
         // If we don't have enough related content by type, add some recent content
         if ($relatedContents->count() < 4) {

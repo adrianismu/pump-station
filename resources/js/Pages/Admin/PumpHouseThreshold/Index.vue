@@ -46,7 +46,7 @@
             <div class="flex items-center justify-between p-3 bg-muted rounded-lg">
               <div>
                 <p class="text-sm font-medium">Ketinggian Air Saat Ini</p>
-                <p class="text-xs text-muted-foreground">{{ pumpHouse.last_updated ? formatDate(pumpHouse.last_updated) : 'Belum ada data' }}</p>
+                <p class="text-xs text-muted-foreground">{{ getLastUpdated(pumpHouse) }}</p>
               </div>
               <div class="text-right">
                 <p class="text-lg font-bold" :style="{ color: getCurrentLevelColor(pumpHouse) }">
@@ -176,6 +176,22 @@ const props = defineProps({
   isAdmin: Boolean,
 });
 
+const getCurrentWaterLevel = (pumpHouse) => {
+  // Use current_water_level from controller if available
+  if (pumpHouse.current_water_level !== null && pumpHouse.current_water_level !== undefined) {
+    const level = parseFloat(pumpHouse.current_water_level);
+    return isNaN(level) ? 'N/A' : `${level.toFixed(2)}m`;
+  }
+  
+  // Fallback to old water_level field
+  if (pumpHouse.water_level) {
+    const level = parseFloat(pumpHouse.water_level.toString().replace(' meter', ''));
+    return isNaN(level) ? 'N/A' : `${level.toFixed(2)}m`;
+  }
+  
+  return 'N/A';
+};
+
 const formatDate = (dateString) => {
   if (!dateString) return '';
   const date = new Date(dateString);
@@ -188,10 +204,18 @@ const formatDate = (dateString) => {
   });
 };
 
-const getCurrentWaterLevel = (pumpHouse) => {
-  if (!pumpHouse.water_level) return 'N/A';
-  const level = parseFloat(pumpHouse.water_level.toString().replace(' meter', ''));
-  return isNaN(level) ? 'N/A' : `${level}m`;
+const getLastUpdated = (pumpHouse) => {
+  // Use last_recorded_at from controller if available
+  if (pumpHouse.last_recorded_at) {
+    return formatDate(pumpHouse.last_recorded_at);
+  }
+  
+  // Fallback to last_updated field
+  if (pumpHouse.last_updated) {
+    return formatDate(pumpHouse.last_updated);
+  }
+  
+  return 'Belum ada data';
 };
 
 const getCurrentLevelColor = (pumpHouse) => {
@@ -217,9 +241,17 @@ const getCurrentLevelVariant = (pumpHouse) => {
 };
 
 const getCurrentLevelStatus = (pumpHouse) => {
-  if (!pumpHouse.water_level) return 'N/A';
+  let currentLevel;
   
-  const currentLevel = parseFloat(pumpHouse.water_level.toString().replace(' meter', ''));
+  // Use current_water_level from controller if available
+  if (pumpHouse.current_water_level !== null && pumpHouse.current_water_level !== undefined) {
+    currentLevel = parseFloat(pumpHouse.current_water_level);
+  } else if (pumpHouse.water_level) {
+    currentLevel = parseFloat(pumpHouse.water_level.toString().replace(' meter', ''));
+  } else {
+    return 'N/A';
+  }
+  
   if (isNaN(currentLevel)) return 'N/A';
   
   // Check against pump house specific thresholds if available

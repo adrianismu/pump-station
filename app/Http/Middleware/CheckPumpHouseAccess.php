@@ -26,9 +26,10 @@ class CheckPumpHouseAccess
             return $next($request);
         }
 
-        // Ambil pump_house_id dari route parameter
-        $pumpHouseId = $request->route('pump_house') ?? 
-                      $request->route('pumpHouse') ?? 
+        // Ambil pump_house_id dari route parameter dengan berbagai kemungkinan nama
+        $pumpHouseId = $request->route('pumpHouse') ?? 
+                      $request->route('pump_house') ?? 
+                      $request->route('id') ??
                       $request->input('pump_house_id');
 
         // Jika tidak ada pump_house_id, cek apakah user memiliki akses ke minimal satu pump house

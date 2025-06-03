@@ -197,7 +197,7 @@
           <Separator class="my-4" />
           
           <div class="space-y-2">
-            <Button class="w-full" as="a" :href="route('admin.pump-houses.show', selectedPumpHouse.id)">
+            <Button class="w-full" as="a" :href="route('admin.database.show', selectedPumpHouse.id)">
               <Eye class="h-4 w-4 mr-2" />
               Lihat Detail
             </Button>
@@ -454,7 +454,7 @@ const updateMarkers = () => {
             </div>
             
             <div class="mt-3 pt-3 border-t border-gray-200">
-              <button onclick="window.open('${route('admin.pump-houses.show', pumpHouse.id)}', '_blank')" 
+              <button onclick="window.open('${route('admin.database.show', pumpHouse.id)}', '_blank')" 
                       class="w-full bg-blue-600 hover:bg-blue-700 text-white text-sm py-2 px-3 rounded-md transition-colors">
                  Lihat Detail
               </button>

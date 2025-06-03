@@ -3,8 +3,8 @@
       <div class="flex items-center gap-2 mb-6">
         <Link :href="route('admin.education')">
           <Button variant="outline" size="icon">
-            <ChevronLeft class="h-4 w-4" />
-          </Button>
+          <ChevronLeft class="h-4 w-4" />
+        </Button>
         </Link>
         <h1 class="text-2xl font-bold">Tambah Konten Edukasi Baru</h1>
       </div>
@@ -66,15 +66,15 @@
                 <div>
                   <Label for="image">Upload Gambar Thumbnail</Label>
                   <div class="space-y-4">
-                    <Input 
-                      id="image" 
+                  <Input 
+                    id="image" 
                       type="file"
                       accept="image/*"
                       @change="handleImageUpload"
-                      :class="{ 'border-destructive': form.errors.image }"
+                    :class="{ 'border-destructive': form.errors.image }"
                       class="file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-primary file:text-primary-foreground hover:file:bg-primary/90"
-                      required
-                    />
+                    required
+                  />
                     <p v-if="form.errors.image" class="text-destructive text-sm">{{ form.errors.image }}</p>
                     <p class="text-xs text-muted-foreground">
                       Upload gambar thumbnail konten (format: JPEG, PNG, JPG, GIF - maksimal 2MB)
@@ -124,14 +124,14 @@
                 <div v-if="isInfografis">
                   <Label for="infographic">Upload File Infografis</Label>
                   <div class="space-y-4">
-                    <Input 
+                  <Input 
                       id="infographic" 
                       type="file"
                       accept="image/*,.pdf"
                       @change="handleInfographicUpload"
                       :class="{ 'border-destructive': form.errors.infographic }"
                       class="file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-primary file:text-primary-foreground hover:file:bg-primary/90"
-                    />
+                  />
                     <p v-if="form.errors.infographic" class="text-destructive text-sm">{{ form.errors.infographic }}</p>
                     <p class="text-xs text-muted-foreground">
                       Upload file infografis (format: JPEG, PNG, JPG, GIF, PDF - maksimal 5MB) - Opsional
@@ -233,8 +233,8 @@
             <div class="flex justify-end gap-4 pt-4">
               <Link :href="route('admin.education')">
                 <Button type="button" variant="outline">
-                  Batal
-                </Button>
+                Batal
+              </Button>
               </Link>
               <Button type="submit" :disabled="form.processing">
                 {{ form.processing ? 'Menyimpan...' : (form.published ? 'Publikasikan Konten' : 'Simpan sebagai Draft') }}

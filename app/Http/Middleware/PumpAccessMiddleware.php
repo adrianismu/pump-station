@@ -31,14 +31,10 @@ class PumpAccessMiddleware
                 abort(403, 'Anda tidak memiliki akses ke rumah pompa ini.');
             }
         } else {
-            // Jika tidak ada parameter pump house, pastikan user adalah petugas yang memiliki akses minimal
+            // Jika tidak ada parameter pump house (halaman index), izinkan petugas masuk
+            // Controller akan menangani filtering data sesuai akses
             if (!$user->isPetugas()) {
                 abort(403, 'Anda tidak memiliki akses ke sistem ini.');
-            }
-            
-            $accessibleIds = $user->getAccessiblePumpHouseIds();
-            if (empty($accessibleIds)) {
-                abort(403, 'Anda belum ditugaskan ke rumah pompa manapun.');
             }
         }
         

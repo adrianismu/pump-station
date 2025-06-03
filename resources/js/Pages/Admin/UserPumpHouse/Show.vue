@@ -227,7 +227,6 @@
               <SelectContent>
                 <SelectItem value="read">Read - Hanya Lihat</SelectItem>
                 <SelectItem value="write">Write - Lihat & Edit</SelectItem>
-                <SelectItem value="admin">Admin - Full Access</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -283,7 +282,6 @@
               <SelectContent>
                 <SelectItem value="read">Read - Hanya Lihat</SelectItem>
                 <SelectItem value="write">Write - Lihat & Edit</SelectItem>
-                <SelectItem value="admin">Admin - Full Access</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -431,7 +429,6 @@ const revokeForm = useForm({})
 // Methods
 const getAccessLevelVariant = (level) => {
   switch (level) {
-    case 'admin': return 'destructive'
     case 'write': return 'default'
     case 'read': return 'secondary'
     default: return 'outline'

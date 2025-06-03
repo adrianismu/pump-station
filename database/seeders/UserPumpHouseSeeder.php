@@ -40,11 +40,11 @@ class UserPumpHouseSeeder extends Seeder
                 'access_level' => 'read',
                 'notes' => 'Petugas monitoring area Surabaya Utara'
             ],
-            // Petugas 3: Akses ke Genteng (admin access)
+            // Petugas 3: Akses ke Genteng (write access)
             [
                 'user_email' => 'petugas3@example.com',
                 'pump_houses' => ['Genteng'],
-                'access_level' => 'admin',
+                'access_level' => 'write',
                 'notes' => 'Supervisor area Genteng'
             ],
         ];

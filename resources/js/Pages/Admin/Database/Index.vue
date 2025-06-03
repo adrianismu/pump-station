@@ -40,10 +40,6 @@
                   Tambah Rumah Pompa
                 </Button>
               </Link>
-              <Button variant="outline">
-                <Download class="mr-2 h-4 w-4" />
-                Export
-              </Button>
             </div>
           </div>
         </CardContent>
@@ -101,7 +97,7 @@
               <TableCell class="text-sm text-muted-foreground">{{ formatTimeAgo(pumpHouse.last_updated) }}</TableCell>
               <TableCell class="text-right">
                 <div class="flex justify-end gap-2">
-                  <Link :href="route('admin.pump-houses.show', pumpHouse.id)">
+                  <Link :href="route('admin.database.show', pumpHouse.id)">
                     <Button variant="ghost" size="icon">
                       <Eye class="h-4 w-4" />
                     </Button>
@@ -195,7 +191,6 @@ import { router } from '@inertiajs/vue3';
 import {
   Search,
   Plus,
-  Download,
   ChevronUp,
   ChevronDown,
   ChevronLeft,
