@@ -168,6 +168,21 @@
               </div>
 
               <div>
+                <Label for="active_pumps">Pompa Aktif</Label>
+                <Input 
+                  id="active_pumps" 
+                  v-model="form.active_pumps" 
+                  type="number" 
+                  min="0" 
+                  :max="form.pump_count || 1"
+                  placeholder="0" 
+                  :class="{ 'border-destructive': form.errors.active_pumps }"
+                />
+                <p v-if="form.errors.active_pumps" class="text-destructive text-sm mt-1">{{ form.errors.active_pumps }}</p>
+                <p class="text-xs text-muted-foreground mt-1">Maksimal {{ form.pump_count || 1 }} pompa (sesuai jumlah pompa di atas)</p>
+              </div>
+
+              <div>
                 <Label for="built_year">Tahun Dibangun</Label>
                 <Input 
                   id="built_year" 
@@ -306,6 +321,7 @@ const form = useForm({
   status: "Aktif",
   capacity: "3000 m³/jam",
   pump_count: 5,
+  active_pumps: 0,
   image: null,
   built_year: new Date().getFullYear(),
   manager_name: "",

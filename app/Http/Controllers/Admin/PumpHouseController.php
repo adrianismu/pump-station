@@ -126,4 +126,28 @@ class PumpHouseController extends Controller
             'pump_active' => $validated['pump_active']
         ]);
     }
+
+    /**
+     * Update pump status (active pumps count)
+     */
+    public function updatePumpStatus(Request $request, PumpHouse $pumpHouse)
+    {
+        $validated = $request->validate([
+            'active_pumps' => 'required|integer|min:0',
+        ]);
+
+        // Validate that active_pumps doesn't exceed pump_count
+        if ($validated['active_pumps'] > $pumpHouse->pump_count) {
+            return back()->withErrors([
+                'active_pumps' => 'Jumlah pompa aktif tidak boleh lebih besar dari total pompa'
+            ])->withInput();
+        }
+
+        // Update the pump status
+        $pumpHouse->active_pumps = $validated['active_pumps'];
+        $pumpHouse->last_updated = now();
+        $pumpHouse->save();
+
+        return back()->with('success', 'Status pompa berhasil diperbarui');
+    }
 }

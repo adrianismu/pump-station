@@ -73,6 +73,7 @@ class DatabaseController extends Controller
             'status' => 'required|string|in:Aktif,Perlu Perhatian,Tidak Aktif',
             'capacity' => 'required|string',
             'pump_count' => 'required|integer|min:1',
+            'active_pumps' => 'required|integer|min:0',
             'image' => 'required|image|mimes:jpeg,png,jpg,gif|max:2048',
             'built_year' => 'required|integer|min:1900|max:2100',
             'manager_name' => 'required|string|max:255',
@@ -81,6 +82,13 @@ class DatabaseController extends Controller
             'staff_count' => 'required|integer|min:1',
             'description' => 'nullable|string',
         ]);
+        
+        // Validate that active_pumps doesn't exceed pump_count
+        if ($validated['active_pumps'] > $validated['pump_count']) {
+            return back()->withErrors([
+                'active_pumps' => 'Jumlah pompa aktif tidak boleh lebih besar dari total pompa'
+            ])->withInput();
+        }
         
         // Upload image using ImageUploadService
         $imageResult = $this->imageUploadService->uploadImage(
@@ -128,6 +136,7 @@ class DatabaseController extends Controller
             'status' => 'required|string|in:Aktif,Perlu Perhatian,Tidak Aktif',
             'capacity' => 'required|string',
             'pump_count' => 'required|integer|min:1',
+            'active_pumps' => 'required|integer|min:0',
             'image' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
             'built_year' => 'required|integer|min:1900|max:2100',
             'manager_name' => 'nullable|string|max:255',
@@ -136,6 +145,13 @@ class DatabaseController extends Controller
             'staff_count' => 'nullable|integer|min:1',
             'description' => 'nullable|string',
         ]);
+        
+        // Validate that active_pumps doesn't exceed pump_count
+        if ($validated['active_pumps'] > $validated['pump_count']) {
+            return back()->withErrors([
+                'active_pumps' => 'Jumlah pompa aktif tidak boleh lebih besar dari total pompa'
+            ])->withInput();
+        }
         
         // Handle image update if new image is uploaded
         if ($request->hasFile('image')) {

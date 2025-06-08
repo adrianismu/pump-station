@@ -180,6 +180,21 @@
               </div>
 
               <div>
+                <Label for="active_pumps">Pompa Aktif</Label>
+                <Input 
+                  id="active_pumps" 
+                  v-model="form.active_pumps" 
+                  type="number" 
+                  min="0" 
+                  :max="form.pump_count || 1"
+                  placeholder="0" 
+                  :class="{ 'border-destructive': form.errors.active_pumps }"
+                />
+                <p v-if="form.errors.active_pumps" class="text-destructive text-sm mt-1">{{ form.errors.active_pumps }}</p>
+                <p class="text-xs text-muted-foreground mt-1">Maksimal {{ form.pump_count || 1 }} pompa (sesuai jumlah pompa di atas)</p>
+              </div>
+
+              <div>
                 <Label for="built_year">Tahun Dibangun</Label>
                 <Input 
                   id="built_year" 
@@ -322,6 +337,7 @@ const form = ref({
   status: props.pumpHouse.status,
   capacity: props.pumpHouse.capacity,
   pump_count: props.pumpHouse.pump_count,
+  active_pumps: props.pumpHouse.active_pumps || 0,
   image: null, // Will contain new uploaded file if any
   built_year: props.pumpHouse.built_year,
   manager_name: props.pumpHouse.manager_name,

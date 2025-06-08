@@ -75,6 +75,7 @@ Route::middleware(['auth', 'verified'])->prefix('admin')->name('admin.')->group(
         Route::get('/database/{pumpHouse}/edit', [DatabaseController::class, 'edit'])->name('database.edit')->middleware('pump.access:write');
         Route::put('/database/{pumpHouse}', [DatabaseController::class, 'update'])->name('database.update')->middleware('pump.access:write');
         Route::put('/database/{pumpHouse}/toggle-status', [DatabaseController::class, 'toggleStatus'])->name('database.toggle-status')->middleware('pump.access:write');
+        Route::put('/database/{pumpHouse}/pump-status', [\App\Http\Controllers\Admin\PumpHouseController::class, 'updatePumpStatus'])->name('database.update-pump-status')->middleware('pump.access:write');
         
         // Water Level Management Routes - Petugas bisa akses sesuai pump house mereka
         Route::resource('water-level', WaterLevelController::class);

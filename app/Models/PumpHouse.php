@@ -17,6 +17,7 @@ class PumpHouse extends Model
         'status',
         'capacity',
         'pump_count',
+        'active_pumps',
         'water_level_warning',
         'water_level_critical',
         'image',
@@ -62,6 +63,30 @@ class PumpHouse extends Model
     {
         $latestRecord = $this->waterLevelHistory()->latest('recorded_at')->first();
         return $latestRecord ? (float) $latestRecord->water_level : 0;
+    }
+
+    // Get pump status percentage
+    public function getPumpStatusPercentage()
+    {
+        $totalPumps = $this->pump_count ?: 1;
+        $activePumps = $this->active_pumps ?: 0;
+        
+        return round(($activePumps / $totalPumps) * 100, 1);
+    }
+
+    // Get pump status text
+    public function getPumpStatusText()
+    {
+        $activePumps = $this->active_pumps ?: 0;
+        $totalPumps = $this->pump_count ?: 1;
+        
+        if ($activePumps === 0) {
+            return 'Semua pompa tidak aktif';
+        } elseif ($activePumps === $totalPumps) {
+            return 'Semua pompa aktif';
+        } else {
+            return "{$activePumps} dari {$totalPumps} pompa aktif";
+        }
     }
 
     // Relationships

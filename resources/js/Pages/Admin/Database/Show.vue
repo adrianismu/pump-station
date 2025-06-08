@@ -50,7 +50,7 @@
             <h2 class="text-2xl font-semibold mb-2">{{ pumpHouse.name }}</h2>
             <p class="text-sm text-muted-foreground mb-4">{{ pumpHouse.address }}</p>
             <Separator class="my-4" />
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
               <div class="bg-muted/50 p-3 rounded-md">
                 <p class="text-xs text-muted-foreground mb-1">Kapasitas</p>
                 <p class="font-medium">{{ pumpHouse.capacity }}</p>
@@ -59,6 +59,10 @@
                 <p class="text-xs text-muted-foreground mb-1">Jumlah Pompa</p>
                 <p class="font-medium">{{ pumpHouse.pump_count }} unit</p>
               </div>
+                              <div class="bg-muted/50 p-3 rounded-md">
+                  <p class="text-xs text-muted-foreground mb-1">Pompa Aktif</p>
+                  <p class="font-medium">{{ pumpHouse.active_pumps || 0 }}/{{ pumpHouse.pump_count || 1 }}</p>
+                </div>
               <div class="bg-muted/50 p-3 rounded-md">
                 <p class="text-xs text-muted-foreground mb-1">Tahun Dibangun</p>
                 <p class="font-medium">{{ pumpHouse.built_year }}</p>
@@ -180,8 +184,8 @@
             <CardTitle>Status Pompa dan Ketinggian Air</CardTitle>
           </CardHeader>
           <CardContent>
-            <!-- Water Level Status Cards -->
-            <div class="grid gap-4 md:grid-cols-2 mb-6">
+            <!-- Status Cards -->
+            <div class="grid gap-4 md:grid-cols-3 mb-6">
               <div class="border rounded-lg p-4">
                 <div class="flex items-center gap-3">
                   <div class="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
@@ -210,6 +214,65 @@
                     <p class="text-lg font-semibold">{{ waterLevelStatus?.label || 'Normal' }}</p>
                     <p class="text-xs text-muted-foreground">{{ waterLevelStatus?.description || 'Ketinggian normal' }}</p>
                   </div>
+                </div>
+              </div>
+
+              <div class="border rounded-lg p-4">
+                <div class="flex items-center gap-3">
+                  <div class="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center">
+                    <Power class="h-5 w-5 text-green-600" />
+                  </div>
+                  <div>
+                    <p class="text-sm font-medium text-muted-foreground">Status Pompa</p>
+                    <p class="text-2xl font-bold">{{ pumpHouse.active_pumps || 0 }}/{{ pumpHouse.pump_count || 1 }}</p>
+                    <p class="text-xs text-muted-foreground">{{ getPumpStatusText() }}</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Pump Control -->
+            <div class="border rounded-lg p-4">
+              <div class="flex items-center justify-between mb-4">
+                <div>
+                  <h4 class="font-medium">Kontrol Pompa</h4>
+                  <p class="text-sm text-muted-foreground">Kelola status pompa aktif secara real-time</p>
+                </div>
+              </div>
+              
+              <div class="flex items-center gap-4">
+                <div class="flex items-center gap-2">
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    @click="decrementPumps"
+                    :disabled="(pumpHouse.active_pumps || 0) <= 0 || pumpStatusForm.processing"
+                  >
+                    <span class="text-lg font-mono">-</span>
+                  </Button>
+                  
+                  <div class="text-center px-4">
+                    <p class="text-2xl font-bold">{{ pumpHouse.active_pumps || 0 }}</p>
+                    <p class="text-xs text-muted-foreground">Aktif</p>
+                  </div>
+                  
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    @click="incrementPumps"
+                    :disabled="(pumpHouse.active_pumps || 0) >= (pumpHouse.pump_count || 1) || pumpStatusForm.processing"
+                  >
+                    <span class="text-lg font-mono">+</span>
+                  </Button>
+                </div>
+                
+                <div class="text-sm text-muted-foreground">
+                  dari {{ pumpHouse.pump_count || 1 }} pompa total
+                </div>
+                
+                <div v-if="pumpStatusForm.processing" class="flex items-center gap-2 text-sm text-muted-foreground">
+                  <Loader2 class="h-4 w-4 animate-spin" />
+                  Memperbarui...
                 </div>
               </div>
             </div>
@@ -430,6 +493,7 @@ import 'leaflet/dist/leaflet.css'
 import { getWeatherData, getWeatherDescription, formatRainfall, getRainfallIntensity, getWeatherIcon } from '@/services/weatherService'
 import WaterLevelChart from '@/Components/Charts/WaterLevelChart.vue'
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/Components/ui/dialog'
+import { useToast } from '@/Components/ui/toast'
 
 defineOptions({ layout: AdminLayout })
 
@@ -454,6 +518,9 @@ const props = defineProps({
 
 const { pumpHouse, canEdit } = props
 
+// Toast for notifications
+const { toast } = useToast()
+
 // Forms
 const showEditModal = ref(false)
 const editForm = useForm({
@@ -469,6 +536,11 @@ const editForm = useForm({
 })
 
 const toggleForm = useForm({})
+
+// Pump status form
+const pumpStatusForm = useForm({
+  active_pumps: pumpHouse.active_pumps || 0
+})
 
 // Submit functions
 const submitEdit = () => {
@@ -487,6 +559,59 @@ const toggleStatus = () => {
       status: newStatus
     },
     preserveState: false
+  })
+}
+
+// Pump status functions
+const incrementPumps = () => {
+  const currentActive = pumpHouse.active_pumps || 0
+  const totalPumps = pumpHouse.pump_count || 1
+  
+  if (currentActive < totalPumps) {
+    updatePumpStatus(currentActive + 1)
+  }
+}
+
+const decrementPumps = () => {
+  const currentActive = pumpHouse.active_pumps || 0
+  
+  if (currentActive > 0) {
+    updatePumpStatus(currentActive - 1)
+  }
+}
+
+const updatePumpStatus = (newActivePumps) => {
+  pumpStatusForm.active_pumps = newActivePumps
+  
+  pumpStatusForm.put(route('admin.database.update-pump-status', pumpHouse.id), {
+    onSuccess: (page) => {
+      // Update the local pump house data
+      pumpHouse.active_pumps = newActivePumps
+      // Reset form processing state
+      pumpStatusForm.reset('active_pumps')
+      pumpStatusForm.active_pumps = newActivePumps
+      
+      // Show success toast
+      toast({
+        title: "Berhasil",
+        description: "Status pompa berhasil diperbarui",
+      })
+    },
+    onError: (errors) => {
+      console.error('Error updating pump status:', errors)
+      // Reset form processing state on error
+      pumpStatusForm.active_pumps = pumpHouse.active_pumps || 0
+      
+      // Show error toast
+      const errorMessage = errors.active_pumps || 'Terjadi kesalahan saat memperbarui status pompa'
+      toast({
+        title: "Error",
+        description: errorMessage,
+        variant: "destructive",
+      })
+    },
+    preserveState: true,
+    preserveScroll: true
   })
 }
 
@@ -776,6 +901,20 @@ const getStatusColor = (level) => {
     'critical': 'bg-red-100 text-red-600',
   }
   return colorMap[level] || 'bg-green-100 text-green-600'
+}
+
+// Pump status text function
+const getPumpStatusText = () => {
+  const activePumps = pumpHouse.active_pumps || 0
+  const totalPumps = pumpHouse.pump_count || 1
+  
+  if (activePumps === 0) {
+    return 'Semua pompa tidak aktif'
+  } else if (activePumps === totalPumps) {
+    return 'Semua pompa aktif'
+  } else {
+    return `${activePumps} dari ${totalPumps} pompa aktif`
+  }
 }
 </script>
 
