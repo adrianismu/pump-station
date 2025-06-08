@@ -306,7 +306,7 @@
                   <span><Droplet class="inline w-4 h-4 mr-1" />{{ getCurrentWeather.humidity }}&#37;</span>
                 </div>
                 <div v-if="getCurrentWeather.precipitation !== undefined" class="flex gap-2 mt-1 text-xs text-muted-foreground">
-                  <span><CloudRain class="inline w-3 h-3 mr-1" /> {{ getCurrentWeather.precipitation }} mm</span>
+                  <span><CloudRain class="inline w-3 h-3 mr-1" /> {{ getCurrentWeather.precipitation_formatted || (getCurrentWeather.precipitation + ' mm') || '0 mm' }}</span>
                   <span v-if="getCurrentWeather.rain"><span>Hujan: {{ getCurrentWeather.rain }} mm</span></span>
                 </div>
               </div>
@@ -490,7 +490,7 @@ import {
 } from 'lucide-vue-next'
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
-import { getWeatherData, getWeatherDescription, formatRainfall, getRainfallIntensity, getWeatherIcon } from '@/services/weatherService'
+import { getWeatherData, getWeatherDataForPumpHouse, getWeatherDescription, formatRainfall, getRainfallIntensity, getWeatherIcon } from '@/services/weatherService'
 import WaterLevelChart from '@/Components/Charts/WaterLevelChart.vue'
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/Components/ui/dialog'
 import { useToast } from '@/Components/ui/toast'
@@ -782,7 +782,13 @@ const fetchWeatherData = async () => {
   weatherError.value = null
   
   try {
+    // Use general weather endpoint which doesn't require auth
     const data = await getWeatherData(pumpHouse.lat, pumpHouse.lng)
+    
+    if (!data) {
+      throw new Error("No weather data received")
+    }
+    
     weatherData.value = data
   } catch (error) {
     console.error("Error fetching weather data:", error)
@@ -797,14 +803,20 @@ const getCurrentWeather = computed(() => {
   
   const current = weatherData.value.current
   return {
-    temperature: current.temperature_2m,
-    humidity: current.relative_humidity_2m,
-    precipitation: current.precipitation,
-    rain: current.rain,
+    temperature: current.temperature_2m || 0,
+    humidity: current.relative_humidity_2m || 0,
+    precipitation: current.precipitation || 0,
+    precipitation_formatted: current.precipitation_formatted || formatRainfall(current.precipitation || 0),
+    precipitation_intensity: current.precipitation_intensity || getRainfallIntensity(current.precipitation || 0),
+    rain: current.rain || 0,
+    rain_formatted: current.rain_formatted || formatRainfall(current.rain || 0),
     weatherCode: current.weather_code,
-    windSpeed: current.wind_speed_10m,
-    weatherDescription: getWeatherDescription(current.weather_code),
-    weatherIcon: getWeatherIcon(current.weather_code)
+    windSpeed: current.wind_speed_10m || 0,
+    // Use backend-provided descriptions and icons or fallback to local functions
+    weatherDescription: current.weather_description || getWeatherDescription(current.weather_code),
+    weatherIcon: current.weather_icon || getWeatherIcon(current.weather_code),
+    // Include flood risk from backend if available
+    floodRisk: weatherData.value.flood_risk
   }
 })
 
@@ -812,15 +824,17 @@ const getDailyForecast = computed(() => {
   if (!weatherData.value || !weatherData.value.daily) return []
   
   return weatherData.value.daily.time.map((time, index) => {
+    const weatherCode = weatherData.value.daily.weather_code[index]
     return {
       date: new Date(time),
-      maxTemp: weatherData.value.daily.temperature_2m_max[index],
-      minTemp: weatherData.value.daily.temperature_2m_min[index],
-      precipitationSum: weatherData.value.daily.precipitation_sum[index],
-      precipitationProbability: weatherData.value.daily.precipitation_probability_max[index],
-      weatherCode: weatherData.value.daily.weather_code[index],
-      weatherDescription: getWeatherDescription(weatherData.value.daily.weather_code[index]),
-      weatherIcon: getWeatherIcon(weatherData.value.daily.weather_code[index])
+      maxTemp: weatherData.value.daily.temperature_2m_max[index] || 0,
+      minTemp: weatherData.value.daily.temperature_2m_min[index] || 0,
+      precipitationSum: weatherData.value.daily.precipitation_sum[index] || 0,
+      precipitationProbability: weatherData.value.daily.precipitation_probability_max[index] || 0,
+      weatherCode: weatherCode,
+      // Use backend-provided descriptions and icons arrays or fallback to local functions
+      weatherDescription: weatherData.value.daily.weather_descriptions?.[index] || getWeatherDescription(weatherCode),
+      weatherIcon: weatherData.value.daily.weather_icons?.[index] || getWeatherIcon(weatherCode)
     }
   })
 })

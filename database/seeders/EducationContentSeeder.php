@@ -59,9 +59,9 @@ Masyarakat memiliki peran penting dalam menjaga sistem drainase tetap berfungsi 
 - Mengurangi limpasan air hujan dengan membuat sumur resapan atau biopori
 
 Dengan pemahaman yang lebih baik tentang sistem drainase dan perannya dalam pencegahan banjir, diharapkan masyarakat dapat lebih berperan aktif dalam menjaga dan memelihara infrastruktur vital ini.",
-                'tags' => ['drainase', 'banjir', 'infrastruktur', 'pencegahan banjir', 'sistem air'],
+
                 'date' => Carbon::now()->subDays(5),
-                'views' => 1245,
+    
                 'published' => true,
             ],
             [
@@ -138,9 +138,9 @@ Ke depannya, kita dapat mengharapkan:
 - Penggunaan energi terbarukan untuk operasi rumah pompa
 
 Dengan adopsi teknologi modern, pengelolaan rumah pompa akan semakin efisien, responsif, dan berkelanjutan, yang pada akhirnya akan meningkatkan ketahanan kota terhadap banjir.",
-                'tags' => ['teknologi', 'rumah pompa', 'otomatisasi', 'IoT', 'smart city'],
+
                 'date' => Carbon::now()->subDays(12),
-                'views' => 876,
+    
                 'published' => true,
             ],
             [
@@ -205,9 +205,9 @@ Untuk mengatasi peningkatan risiko banjir akibat perubahan iklim, kota-kota perl
 ## Kesimpulan
 
 Perubahan iklim telah dan akan terus meningkatkan risiko banjir di daerah perkotaan. Untuk mengatasi tantangan ini, diperlukan pendekatan terpadu yang melibatkan adaptasi infrastruktur, perencanaan yang lebih baik, dan kesadaran masyarakat. Dengan mengambil tindakan sekarang, kota-kota dapat mengurangi kerentanan mereka terhadap banjir di masa depan dan melindungi penduduk serta infrastruktur mereka dari dampak perubahan iklim.",
-                'tags' => ['perubahan iklim', 'banjir', 'curah hujan', 'adaptasi', 'mitigasi'],
+
                 'date' => Carbon::now()->subDays(20),
-                'views' => 1532,
+    
                 'published' => true,
             ],
             [
@@ -310,9 +310,9 @@ Upaya masyarakat akan lebih efektif jika berkolaborasi dengan pemerintah dan sek
 ## Kesimpulan
 
 Masyarakat memiliki peran yang sangat penting dalam pencegahan banjir. Melalui berbagai kegiatan komunal, perubahan perilaku individu, dan kolaborasi dengan pemangku kepentingan lainnya, masyarakat dapat berkontribusi secara signifikan dalam mengurangi risiko dan dampak banjir. Dengan meningkatkan kesadaran dan partisipasi aktif, kita dapat menciptakan komunitas yang lebih tangguh terhadap banjir dan bencana alam lainnya.",
-                'tags' => ['masyarakat', 'pencegahan banjir', 'partisipasi', 'lingkungan', 'kesadaran'],
+
                 'date' => Carbon::now()->subDays(28),
-                'views' => 2103,
+    
                 'published' => true,
             ],
             [
@@ -451,9 +451,9 @@ Ke depannya, kita dapat mengharapkan:
 ## Kesimpulan
 
 Inovasi dalam desain rumah pompa modern menunjukkan pergeseran paradigma dari infrastruktur fungsional semata menjadi fasilitas multi-fungsi yang berkelanjutan, efisien, dan terintegrasi dengan lingkungan. Dengan terus mengadopsi inovasi ini, kota-kota dapat meningkatkan ketahanan mereka terhadap banjir sekaligus menciptakan ruang publik yang bermanfaat dan berkelanjutan.",
-                'tags' => ['inovasi', 'rumah pompa', 'desain', 'teknologi', 'keberlanjutan'],
+
                 'date' => Carbon::now()->subDays(15),
-                'views' => 945,
+    
                 'published' => true,
             ],
             
@@ -513,9 +513,9 @@ Video ini juga membahas aspek pemeliharaan rumah pompa dan tantangan yang sering
 
 Dengan memahami cara kerja rumah pompa, diharapkan masyarakat dapat lebih menghargai pentingnya infrastruktur ini dalam sistem pengendalian banjir dan pentingnya menjaga kebersihan saluran air dari sampah.",
                 'video_url' => 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
-                'tags' => ['video edukasi', 'rumah pompa', 'banjir', 'infrastruktur', 'drainase'],
+
                 'date' => Carbon::now()->subDays(10),
-                'views' => 3245,
+    
                 'published' => true,
             ],
             [
@@ -592,9 +592,9 @@ Simulasi diakhiri dengan beberapa studi kasus dari kota-kota di seluruh dunia ya
 
 Video simulasi 3D ini tidak hanya memberikan pemahaman yang lebih baik tentang proses terjadinya banjir, tetapi juga menginspirasi penonton dengan berbagai solusi inovatif yang dapat diterapkan untuk mencegah dan mengurangi risiko banjir di daerah perkotaan.",
                 'video_url' => 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
-                'tags' => ['simulasi 3D', 'banjir', 'pencegahan', 'infrastruktur', 'perubahan iklim'],
+
                 'date' => Carbon::now()->subDays(18),
-                'views' => 2876,
+    
                 'published' => true,
             ],
             [
@@ -685,9 +685,9 @@ Di akhir video, kita menampilkan beberapa studi kasus keberhasilan implementasi 
 
 Video tutorial ini diharapkan dapat menginspirasi dan memberdayakan masyarakat untuk membuat lubang biopori di lingkungan mereka, sehingga berkontribusi pada upaya pencegahan banjir dan pengelolaan sampah organik yang lebih baik.",
                 'video_url' => 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
-                'tags' => ['tutorial', 'biopori', 'pencegahan banjir', 'lingkungan', 'sampah organik'],
+
                 'date' => Carbon::now()->subDays(25),
-                'views' => 4532,
+    
                 'published' => true,
             ],
             
@@ -779,9 +779,9 @@ Infografis ini juga menyajikan perbandingan kapasitas berbagai jenis rumah pompa
 
 Dengan memahami anatomi dan fungsi rumah pompa, diharapkan masyarakat dapat lebih menghargai kompleksitas dan pentingnya infrastruktur ini dalam sistem pengendalian banjir perkotaan.",
                 'infographic_url' => 'https://images.unsplash.com/photo-1581093196277-9f608bb3b511?q=80&w=1000',
-                'tags' => ['infografis', 'rumah pompa', 'infrastruktur', 'teknologi', 'pengendalian banjir'],
+
                 'date' => Carbon::now()->subDays(8),
-                'views' => 1876,
+    
                 'published' => true,
             ],
             [
@@ -948,9 +948,9 @@ Infografis ini juga menekankan pentingnya tindakan kolektif:
 
 Dengan melakukan tindakan-tindakan sederhana ini, setiap rumah tangga dapat berkontribusi dalam upaya pencegahan banjir yang lebih luas. Pencegahan banjir adalah tanggung jawab bersama yang dimulai dari tindakan kecil di lingkungan rumah kita sendiri.",
                 'infographic_url' => 'https://images.unsplash.com/photo-1578496479531-32e296d5c6e1?q=80&w=1000',
-                'tags' => ['infografis', 'pencegahan banjir', 'rumah', 'lingkungan', 'tips praktis'],
+
                 'date' => Carbon::now()->subDays(22),
-                'views' => 3421,
+    
                 'published' => true,
             ],
             [
@@ -1069,9 +1069,9 @@ Infografis ini dibuat berdasarkan data dari:
 
 Dengan memahami peta risiko banjir ini, diharapkan pemerintah dan masyarakat dapat mengambil langkah-langkah yang tepat untuk mengurangi risiko dan dampak banjir di Jakarta.",
                 'infographic_url' => 'https://images.unsplash.com/photo-1572005485433-b025a5ee0f5e?q=80&w=1000',
-                'tags' => ['infografis', 'peta banjir', 'Jakarta', 'rumah pompa', 'mitigasi bencana'],
+
                 'date' => Carbon::now()->subDays(3),
-                'views' => 5243,
+    
                 'published' => true,
             ],
         ];

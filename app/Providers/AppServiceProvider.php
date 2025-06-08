@@ -13,7 +13,8 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        //
+        // Register WeatherService as singleton for better performance
+        $this->app->singleton(\App\Services\WeatherService::class);
     }
 
     /**

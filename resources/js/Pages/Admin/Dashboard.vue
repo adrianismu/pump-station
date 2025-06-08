@@ -159,7 +159,7 @@
                       </div>
                       <div v-if="pump.precipitation !== undefined" class="flex gap-4 mt-2 text-xs">
                         <span class="text-muted-foreground">
-                          <CloudRain class="inline w-3 h-3 mr-1" />{{ pump.precipitation.toFixed(1) }} mm
+                          <CloudRain class="inline w-3 h-3 mr-1" />{{ pump.precipitationFormatted || pump.precipitation?.toFixed(1) + ' mm' || '0 mm' }}
                         </span>
                         <span class="text-muted-foreground">{{ pump.rainfallIntensity }}</span>
                         <Badge 
@@ -493,19 +493,22 @@ const atRiskPumpHouses = computed(() => {
     const weather = weatherDataMap.value[ph.id] || {}
     const precipitation = typeof weather.precipitation === 'number' ? weather.precipitation : 0
     const weatherCode = weather.weather_code
-    const risk = calculateFloodRisk(precipitation, weatherCode)
+    // Use backend flood risk if available, otherwise calculate locally
+    const risk = weather.flood_risk || calculateFloodRisk(precipitation, weatherCode)
     const rainfallIntensity = getRainfallIntensity(precipitation)
     
     return {
       ...ph,
-      temperature: weather.temperature_2m,
-      humidity: weather.relative_humidity_2m,
+      temperature: weather.temperature_2m || 0,
+      humidity: weather.relative_humidity_2m || 0,
       precipitation,
-      windSpeed: weather.wind_speed_10m,
-      weatherDescription: weatherCode ? getWeatherDescription(weatherCode) : "-",
-      weatherIcon: getWeatherIcon(weatherCode) || "Cloud",
+      precipitationFormatted: weather.precipitation_formatted || formatRainfall(precipitation),
+      windSpeed: weather.wind_speed_10m || 0,
+      // Use backend-provided descriptions and icons or fallback to local functions
+      weatherDescription: weather.weather_description || (weatherCode ? getWeatherDescription(weatherCode) : "-"),
+      weatherIcon: weather.weather_icon || getWeatherIcon(weatherCode) || "Cloud",
       risk,
-      rainfallIntensity,
+      rainfallIntensity: weather.precipitation_intensity || getRainfallIntensity(precipitation),
       // Add priority score for sorting
       riskPriority: risk === 'Tinggi' ? 3 : risk === 'Sedang' ? 2 : 1
     }
@@ -595,7 +598,13 @@ const fetchWeatherData = async () => {
         try {
           if (ph.lat && ph.lng) {
             const res = await getWeatherData(ph.lat, ph.lng)
-            return { id: ph.id, weather: res?.current }
+            // Combine current weather data with backend enhancements
+            const currentWeather = res?.current
+            if (currentWeather) {
+              // Include flood_risk from the main response data
+              currentWeather.flood_risk = res?.flood_risk
+            }
+            return { id: ph.id, weather: currentWeather }
           }
         } catch {}
         return { id: ph.id, weather: null }

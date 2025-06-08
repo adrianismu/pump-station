@@ -258,7 +258,7 @@ class PumpHouseSeeder extends Seeder
                 'content' => 'Rumah pompa merupakan infrastruktur vital dalam sistem pengendalian banjir di Surabaya. Fungsi utamanya adalah memompa air dari daerah rendah ke daerah yang lebih tinggi atau ke saluran pembuangan utama. Sistem ini bekerja secara otomatis berdasarkan sensor ketinggian air yang terpasang di berbagai titik strategis.',
                 'image' => 'https://images.unsplash.com/photo-1621905252507-b35492cc74b4?q=80&w=2069&auto=format&fit=crop',
                 'date' => now()->subDays(2),
-                'views' => 1250,
+
                 'created_at' => now()->subDays(2),
             ],
             [
@@ -269,7 +269,7 @@ class PumpHouseSeeder extends Seeder
                 'video_url' => 'https://www.youtube.com/watch?v=example1',
                 'image' => 'https://images.unsplash.com/photo-1574019927486-12cf57a7f3b6?q=80&w=2070&auto=format&fit=crop',
                 'date' => now()->subDays(4),
-                'views' => 3420,
+
                 'created_at' => now()->subDays(4),
             ],
             [
@@ -280,7 +280,7 @@ class PumpHouseSeeder extends Seeder
                 'infographic_url' => 'https://example.com/infographic1.pdf',
                 'image' => 'https://images.unsplash.com/photo-1581092918056-0c4c3acd3789?q=80&w=2070&auto=format&fit=crop',
                 'date' => now()->subDays(6),
-                'views' => 2150,
+
                 'created_at' => now()->subDays(6),
             ],
             [
@@ -290,7 +290,7 @@ class PumpHouseSeeder extends Seeder
                 'content' => 'Pembangunan rumah pompa di Surabaya dimulai pada era kolonial Belanda tahun 1920-an. Awalnya menggunakan pompa manual, kemudian berkembang menjadi pompa diesel (1950-an), pompa listrik (1980-an), hingga sistem otomatis berbasis sensor modern (2000-an). Kini Surabaya memiliki 25 rumah pompa dengan teknologi terdepan.',
                 'image' => 'https://images.unsplash.com/photo-1504328345606-18bbc8c9d7d1?q=80&w=2070&auto=format&fit=crop',
                 'date' => now()->subDays(9),
-                'views' => 980,
+
                 'created_at' => now()->subDays(9),
             ],
             [
@@ -301,7 +301,7 @@ class PumpHouseSeeder extends Seeder
                 'video_url' => 'https://www.youtube.com/watch?v=example2',
                 'image' => 'https://images.unsplash.com/photo-1590496794008-383c8070b257?q=80&w=2069&auto=format&fit=crop',
                 'date' => now()->subDays(11),
-                'views' => 1870,
+
                 'created_at' => now()->subDays(11),
             ],
             [
@@ -311,7 +311,7 @@ class PumpHouseSeeder extends Seeder
                 'content' => 'Teknologi modern rumah pompa meliputi: 1) Sensor IoT untuk monitoring real-time, 2) Sistem otomatis berbasis AI, 3) Integrasi dengan data cuaca, 4) Aplikasi mobile untuk kontrol jarak jauh, 5) Sistem backup power otomatis, 6) Predictive maintenance menggunakan machine learning.',
                 'image' => 'https://images.unsplash.com/photo-1621451537084-482c73073a0f?q=80&w=2070&auto=format&fit=crop',
                 'date' => now()->subDays(13),
-                'views' => 1120,
+
                 'created_at' => now()->subDays(13),
             ],
             [
@@ -321,7 +321,7 @@ class PumpHouseSeeder extends Seeder
                 'content' => 'Perubahan iklim menyebabkan curah hujan ekstrem meningkat 30% dalam 20 tahun terakhir. Rumah pompa modern dirancang dengan kapasitas 150% dari kebutuhan normal untuk mengantisipasi hal ini. Sistem adaptasi meliputi: early warning system, kapasitas pompa yang dapat ditingkatkan, dan integrasi dengan sistem drainase kota.',
                 'image' => 'https://images.unsplash.com/photo-1605600659873-d808a13e4d9a?q=80&w=2070&auto=format&fit=crop',
                 'date' => now()->subDays(16),
-                'views' => 1350,
+
                 'created_at' => now()->subDays(16),
             ],
             [
@@ -332,7 +332,7 @@ class PumpHouseSeeder extends Seeder
                 'infographic_url' => 'https://example.com/infographic2.pdf',
                 'image' => 'https://images.unsplash.com/photo-1611284446314-60a58ac0deb9?q=80&w=2070&auto=format&fit=crop',
                 'date' => now()->subDays(19),
-                'views' => 1680,
+
                 'created_at' => now()->subDays(19),
             ],
             [
@@ -343,7 +343,7 @@ class PumpHouseSeeder extends Seeder
                 'video_url' => 'https://www.youtube.com/watch?v=example3',
                 'image' => 'https://images.unsplash.com/photo-1627669729462-a5cb027872db?q=80&w=2070&auto=format&fit=crop',
                 'date' => now()->subDays(22),
-                'views' => 2240,
+
                 'created_at' => now()->subDays(22),
             ],
         ];

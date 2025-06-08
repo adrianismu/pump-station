@@ -3,6 +3,7 @@
 use App\Http\Controllers\Api\DashboardController;
 use App\Http\Controllers\Api\PumpHouseController;
 use App\Http\Controllers\Api\NotificationController;
+use App\Http\Controllers\Api\WeatherController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -34,6 +35,17 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/dashboard', [DashboardController::class, 'index']);
     
     Route::apiResource('pump-houses', PumpHouseController::class);
+});
+
+// Public Weather API routes (for landing page and public access)
+Route::get('/weather/public', [WeatherController::class, 'show'])->name('api.weather.public');
+
+// Weather API routes without auth (for both public and admin use)
+Route::get('/weather', [WeatherController::class, 'show'])->name('api.weather');
+
+// Protected Weather API routes (using web auth for specific pump house data)
+Route::middleware('auth:web')->group(function () {
+    Route::get('/weather/pump-house/{pumpHouse}', [WeatherController::class, 'pumpHouse'])->name('api.weather.pump-house');
 });
 // Threshold settings API (using web auth for compatibility)
 Route::middleware('auth:web')->group(function () {

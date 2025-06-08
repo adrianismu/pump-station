@@ -1,12 +1,10 @@
 /**
- * Weather Service for Open-Meteo API integration
- * Documentation: https://open-meteo.com/en/docs
+ * Weather Service for internal API integration
+ * Uses backend API endpoint that handles caching and Open-Meteo integration
  */
 
-const OPEN_METEO_URL = "https://api.open-meteo.com/v1/forecast"
-
 /**
- * Fetch weather data for a specific location
+ * Fetch weather data for a specific location (authenticated)
  * @param {number} latitude - Location latitude
  * @param {number} longitude - Location longitude
  * @returns {Promise} - Weather data promise
@@ -14,16 +12,105 @@ const OPEN_METEO_URL = "https://api.open-meteo.com/v1/forecast"
 export async function getWeatherData(latitude, longitude) {
   try {
     const response = await fetch(
-      `${OPEN_METEO_URL}?latitude=${latitude}&longitude=${longitude}&current=temperature_2m,relative_humidity_2m,precipitation,rain,weather_code,wind_speed_10m&hourly=temperature_2m,precipitation_probability,precipitation,rain,weather_code&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_sum,precipitation_probability_max&timezone=auto`,
+      `/api/weather?latitude=${latitude}&longitude=${longitude}`,
+      {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+          'X-Requested-With': 'XMLHttpRequest',
+        },
+        credentials: 'same-origin', // Include cookies for authentication
+      }
     )
 
     if (!response.ok) {
       throw new Error(`Weather API error: ${response.status}`)
     }
 
-    return await response.json()
+    const result = await response.json()
+    
+    if (!result.success) {
+      throw new Error(result.message || 'Failed to fetch weather data')
+    }
+
+    return result.data
   } catch (error) {
     console.error("Failed to fetch weather data:", error)
+    return null
+  }
+}
+
+/**
+ * Fetch weather data for a specific location (public access)
+ * @param {number} latitude - Location latitude
+ * @param {number} longitude - Location longitude
+ * @returns {Promise} - Weather data promise
+ */
+export async function getWeatherDataPublic(latitude, longitude) {
+  try {
+    const response = await fetch(
+      `/api/weather/public?latitude=${latitude}&longitude=${longitude}`,
+      {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+          'X-Requested-With': 'XMLHttpRequest',
+        },
+      }
+    )
+
+    if (!response.ok) {
+      throw new Error(`Weather API error: ${response.status}`)
+    }
+
+    const result = await response.json()
+    
+    if (!result.success) {
+      throw new Error(result.message || 'Failed to fetch weather data')
+    }
+
+    return result.data
+  } catch (error) {
+    console.error("Failed to fetch weather data:", error)
+    return null
+  }
+}
+
+/**
+ * Fetch weather data for a specific pump house
+ * @param {number} pumpHouseId - Pump house ID
+ * @returns {Promise} - Weather data promise
+ */
+export async function getWeatherDataForPumpHouse(pumpHouseId) {
+  try {
+    const response = await fetch(
+      `/api/weather/pump-house/${pumpHouseId}`,
+      {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+          'X-Requested-With': 'XMLHttpRequest',
+        },
+        credentials: 'same-origin',
+      }
+    )
+
+    if (!response.ok) {
+      throw new Error(`Weather API error: ${response.status}`)
+    }
+
+    const result = await response.json()
+    
+    if (!result.success) {
+      throw new Error(result.message || 'Failed to fetch weather data')
+    }
+
+    return result.data
+  } catch (error) {
+    console.error("Failed to fetch weather data for pump house:", error)
     return null
   }
 }
@@ -32,6 +119,7 @@ export async function getWeatherData(latitude, longitude) {
  * Get weather code description
  * @param {number} code - Weather code from Open-Meteo
  * @returns {string} - Weather description
+ * Note: This is now mainly used for fallback. The backend provides descriptions directly.
  */
 export function getWeatherDescription(code) {
   const weatherCodes = {
@@ -97,6 +185,7 @@ export function getRainfallIntensity(amount) {
  * Get weather icon based on weather code
  * @param {number} code - Weather code from Open-Meteo
  * @returns {string} - Lucide icon name
+ * Note: This is now mainly used for fallback. The backend provides icon names directly.
  */
 export function getWeatherIcon(code) {
   if (code === 0) return "Sun"

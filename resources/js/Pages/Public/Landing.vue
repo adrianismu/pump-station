@@ -139,13 +139,13 @@
                 <div class="flex items-center justify-between">
                   <span class="text-2xl font-bold">{{ Math.round(pumpHouse.weather.temperature) }}°C</span>
                   <Badge :variant="getRainfallBadgeVariant(pumpHouse.weather.rainfall)">
-                    {{ formatRainfall(pumpHouse.weather.rainfall) }}
+                    {{ pumpHouse.weather.precipitationFormatted }}
                   </Badge>
                 </div>
                 
                 <div class="text-sm text-muted-foreground">
                   <p>{{ pumpHouse.weather.description }}</p>
-                  <p>{{ getRainfallIntensity(pumpHouse.weather.rainfall) }}</p>
+                  <p>{{ pumpHouse.weather.precipitationIntensity }}</p>
                   <p>Kelembaban: {{ pumpHouse.weather.humidity }}%</p>
                 </div>
 
@@ -164,7 +164,7 @@
                         class="h-4 w-4 mx-auto my-1 text-blue-500"
                       />
                       <p class="font-medium">{{ Math.round(hour.temperature_2m) }}°</p>
-                      <p class="text-blue-600">{{ formatRainfall(hour.precipitation || 0) }}</p>
+                      <p class="text-blue-600">{{ hour.precipitationFormatted || formatRainfall(hour.precipitation || 0) }}</p>
                     </div>
                   </div>
                 </div>
@@ -309,6 +309,7 @@ import {
 } from 'lucide-vue-next'
 import { 
   getWeatherData, 
+  getWeatherDataPublic,
   getWeatherDescription, 
   formatRainfall, 
   getRainfallIntensity,
@@ -397,7 +398,8 @@ const fetchWeatherForPumpHouses = async () => {
   isLoadingWeather.value = true
   const weatherPromises = props.pumpHouses.map(async (pumpHouse) => {
     try {
-      const weatherData = await getWeatherData(pumpHouse.latitude, pumpHouse.longitude)
+      // Use public weather endpoint for landing page (note: PumpHouse uses lat/lng columns)
+      const weatherData = await getWeatherDataPublic(pumpHouse.lat, pumpHouse.lng)
       if (weatherData) {
         const currentWeather = weatherData.current
         const rainfall = currentWeather.precipitation || currentWeather.rain || 0
@@ -405,16 +407,22 @@ const fetchWeatherForPumpHouses = async () => {
         return {
           ...pumpHouse,
           weather: {
-            temperature: currentWeather.temperature_2m,
-            humidity: currentWeather.relative_humidity_2m,
+            temperature: currentWeather.temperature_2m || 0,
+            temperature_2m: currentWeather.temperature_2m || 0,
+            humidity: currentWeather.relative_humidity_2m || 0,
             rainfall: rainfall,
-            description: getWeatherDescription(currentWeather.weather_code),
-            icon: getWeatherIcon(currentWeather.weather_code),
-            floodRisk: calculateFloodRisk(rainfall, currentWeather.weather_code),
+            // Use backend-provided formatted precipitation data
+            precipitationFormatted: currentWeather.precipitation_formatted || formatRainfall(rainfall),
+            precipitationIntensity: currentWeather.precipitation_intensity || getRainfallIntensity(rainfall),
+            // Use backend-provided descriptions and icons or fallback to local functions
+            description: currentWeather.weather_description || getWeatherDescription(currentWeather.weather_code),
+            icon: currentWeather.weather_icon || getWeatherIcon(currentWeather.weather_code),
+            floodRisk: weatherData.flood_risk || calculateFloodRisk(rainfall, currentWeather.weather_code),
             hourly: weatherData.hourly ? weatherData.hourly.time.slice(0, 4).map((time, index) => ({
               time,
-              temperature_2m: weatherData.hourly.temperature_2m[index],
-              precipitation: weatherData.hourly.precipitation[index],
+              temperature_2m: weatherData.hourly.temperature_2m[index] || 0,
+              precipitation: weatherData.hourly.precipitation[index] || 0,
+              precipitationFormatted: weatherData.hourly.precipitation_formatted?.[index] || formatRainfall(weatherData.hourly.precipitation[index] || 0),
               weather_code: weatherData.hourly.weather_code[index]
             })) : []
           }
