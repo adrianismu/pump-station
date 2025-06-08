@@ -6,14 +6,153 @@ use App\Models\ThresholdSetting;
 use App\Models\PumpHouseThresholdSetting;
 use App\Models\WaterLevelHistory;
 use App\Models\PumpHouse;
+use App\Models\Alert;
+use App\Models\User;
 use Carbon\Carbon;
 
 class NotificationService
 {
     /**
-     * Get active notifications based on current water levels
+     * Distribute alert notifications to appropriate users based on role and context
+     */
+    public function distributeAlertNotifications(Alert $alert)
+    {
+        $recipients = [];
+
+        // Always send to all admins
+        $admins = User::role('admin')->get();
+        foreach ($admins as $admin) {
+            $recipients[] = [
+                'user_id' => $admin->id,
+                'message' => $alert->internal_message,
+                'type' => 'internal',
+                'role' => 'admin'
+            ];
+        }
+
+        // Send to relevant petugas based on alert type
+        if ($alert->type === 'water_level') {
+            // For water level alerts, send only to petugas with access to this pump house
+            $relevantPetugas = User::role('petugas')
+                ->whereHas('pumpHouses', function($query) use ($alert) {
+                    $query->where('pump_house_id', $alert->pump_house_id)
+                          ->where('is_active', true);
+                })
+                ->get();
+
+            foreach ($relevantPetugas as $petugas) {
+                $recipients[] = [
+                    'user_id' => $petugas->id,
+                    'message' => $alert->internal_message,
+                    'type' => 'internal',
+                    'role' => 'petugas'
+                ];
+            }
+        } elseif ($alert->type === 'weather_forecast') {
+            // For weather alerts, send to all petugas
+            $allPetugas = User::role('petugas')->get();
+            foreach ($allPetugas as $petugas) {
+                $recipients[] = [
+                    'user_id' => $petugas->id,
+                    'message' => $alert->internal_message,
+                    'type' => 'internal',
+                    'role' => 'petugas'
+                ];
+            }
+        }
+
+        // Store notifications in database (you can implement this based on your notification table structure)
+        $this->storeNotifications($alert, $recipients);
+
+        return $recipients;
+    }
+
+    /**
+     * Store notifications in database
+     */
+    private function storeNotifications(Alert $alert, array $recipients)
+    {
+        // Implementation depends on your notification storage structure
+        // This is a placeholder - you can implement based on your needs
+        foreach ($recipients as $recipient) {
+            // Example: Create notification record
+            // Notification::create([
+            //     'user_id' => $recipient['user_id'],
+            //     'alert_id' => $alert->id,
+            //     'message' => $recipient['message'],
+            //     'type' => $recipient['type'],
+            //     'is_read' => false,
+            // ]);
+        }
+    }
+
+    /**
+     * Get active notifications based on current water levels and alerts
      */
     public function getActiveNotifications($userId = null)
+    {
+        $notifications = [];
+        
+        // Get contextual alerts (alerts from last 24 hours)
+        $recentAlerts = $this->getContextualizedAlerts($userId, 24);
+        
+        // Convert alerts to notification format
+        foreach ($recentAlerts as $alert) {
+            $notifications[] = [
+                'id' => 'alert_' . $alert['id'],
+                'type' => $alert['type'],
+                'severity' => $this->mapSeverityToLegacy($alert['severity']),
+                'title' => $alert['title'],
+                'message' => $alert['description'],
+                'description' => $alert['internal_message'],
+                'color' => $this->getSeverityColor($alert['severity']),
+                'pump_house' => $alert['pump_house'],
+                'location' => $alert['location'],
+                'created_at' => $alert['created_at'],
+                'time_ago' => $alert['time_ago'],
+                'actions' => $alert['actions'],
+            ];
+        }
+        
+        // Also get threshold-based notifications for real-time monitoring
+        $thresholdNotifications = $this->getThresholdNotifications($userId);
+        
+        // Merge and deduplicate notifications
+        $allNotifications = array_merge($notifications, $thresholdNotifications);
+        
+        // Remove duplicates based on pump house and keep most recent
+        $uniqueNotifications = [];
+        $processedPumpHouses = [];
+        
+        foreach ($allNotifications as $notification) {
+            $pumpHouseName = $notification['pump_house'] ?? 'unknown';
+            
+            if (!in_array($pumpHouseName, $processedPumpHouses)) {
+                $uniqueNotifications[] = $notification;
+                $processedPumpHouses[] = $pumpHouseName;
+            }
+        }
+        
+        // Sort by severity and time
+        usort($uniqueNotifications, function($a, $b) {
+            $severityOrder = ['critical' => 4, 'high' => 3, 'medium' => 2, 'low' => 1];
+            $severityA = $severityOrder[$a['severity']] ?? 0;
+            $severityB = $severityOrder[$b['severity']] ?? 0;
+            
+            if ($severityA === $severityB) {
+                return strtotime($b['created_at'] ?? 'now') - strtotime($a['created_at'] ?? 'now');
+            }
+            
+            return $severityB - $severityA;
+        });
+        
+        return $uniqueNotifications;
+    }
+
+    /**
+     * Get legacy threshold notifications (backward compatibility)
+     */
+    public function getThresholdNotifications($userId = null)
     {
         $notifications = [];
         
@@ -24,7 +163,7 @@ class NotificationService
         
         // Filter berdasarkan akses user jika bukan admin
         if ($userId) {
-            $user = \App\Models\User::find($userId);
+            $user = User::find($userId);
             if ($user && !$user->isAdmin()) {
                 $accessibleIds = $user->getAccessiblePumpHouseIds();
                 $pumpHousesQuery->whereIn('id', $accessibleIds);
@@ -88,6 +227,87 @@ class NotificationService
         });
 
         return $notifications;
+    }
+
+    /**
+     * Get contextualized alerts for user based on role and access
+     */
+    public function getContextualizedAlerts($userId = null, $hoursBack = null)
+    {
+        $alertsQuery = Alert::with('pump_house')
+            ->where('is_active', true)
+            ->orderBy('created_at', 'desc');
+
+        // Filter by time if specified (default: last 24 hours for notifications)
+        if ($hoursBack !== null) {
+            $alertsQuery->where('created_at', '>', now()->subHours($hoursBack));
+        }
+
+        // Filter berdasarkan akses user jika bukan admin
+        if ($userId) {
+            $user = User::find($userId);
+            if ($user && !$user->isAdmin()) {
+                $accessibleIds = $user->getAccessiblePumpHouseIds();
+                $alertsQuery->whereIn('pump_house_id', $accessibleIds);
+            }
+        }
+
+        $alerts = $alertsQuery->get();
+
+        return $alerts->map(function ($alert) {
+            return [
+                'id' => $alert->id,
+                'type' => $alert->type,
+                'severity' => $alert->severity,
+                'title' => $alert->title,
+                'description' => $alert->description,
+                'internal_message' => $alert->internal_message,
+                'public_message' => $alert->public_message,
+                'pump_house' => $alert->pump_house->name,
+                'location' => $alert->pump_house->address,
+                'created_at' => $alert->created_at,
+                'time_ago' => $alert->created_at->diffForHumans(),
+                'actions' => $this->getAlertActions($alert),
+            ];
+        });
+    }
+
+    /**
+     * Get appropriate actions for an alert based on its type
+     */
+    private function getAlertActions(Alert $alert): array
+    {
+        $actions = [];
+
+        if ($alert->type === 'water_level') {
+            $actions[] = [
+                'label' => 'Lihat Detail',
+                'route' => 'admin.database.show',
+                'params' => $alert->pump_house_id,
+                'type' => 'primary'
+            ];
+            $actions[] = [
+                'label' => 'Riwayat Level Air',
+                'route' => 'admin.water-level.history',
+                'params' => $alert->pump_house_id,
+                'type' => 'secondary'
+            ];
+        } elseif ($alert->type === 'weather_forecast') {
+            $actions[] = [
+                'label' => 'Lihat Rumah Pompa',
+                'route' => 'admin.database.show',
+                'params' => $alert->pump_house_id,
+                'type' => 'primary'
+            ];
+            $actions[] = [
+                'label' => 'Pantau Cuaca',
+                'route' => 'admin.map',
+                'params' => null,
+                'type' => 'secondary'
+            ];
+        }
+
+        return $actions;
     }
 
     /**
@@ -165,11 +385,27 @@ class NotificationService
     }
 
     /**
-     * Get threshold notifications (alias for getActiveNotifications for compatibility)
+     * Map new severity levels to legacy severity levels
      */
-    public function getThresholdNotifications($userId = null)
+    private function mapSeverityToLegacy($severity): string
     {
-        return $this->getActiveNotifications($userId);
+        return match($severity) {
+            'Awas' => 'critical',
+            'Siaga' => 'high',
+            default => 'medium'
+        };
+    }
+
+    /**
+     * Get color for severity level
+     */
+    private function getSeverityColor($severity): string
+    {
+        return match($severity) {
+            'Awas' => '#dc2626',
+            'Siaga' => '#ea580c',
+            default => '#0ea5e9'
+        };
     }
 } 
 

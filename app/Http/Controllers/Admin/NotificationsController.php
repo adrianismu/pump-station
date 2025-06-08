@@ -250,7 +250,7 @@ class NotificationsController extends Controller
     {
         $user = auth()->user();
         $notificationService = new NotificationService();
-        $notifications = $notificationService->getThresholdNotifications($user->id);
+        $notifications = $notificationService->getActiveNotifications($user->id);
         
         return response()->json([
             'notifications' => $notifications,
@@ -261,17 +261,22 @@ class NotificationsController extends Controller
     public function apiCount()
     {
         try {
-            \Log::info('apiCount method called');
-            
             $user = auth()->user();
             $notificationService = new NotificationService();
-            $notifications = $notificationService->getThresholdNotifications($user->id);
             
-            \Log::info('Notifications count: ' . count($notifications));
+            // Get notifications from last 24 hours only
+            $notifications = $notificationService->getActiveNotifications($user->id);
+            
+            // Filter by severity if needed - only count critical and high severity
+            $criticalNotifications = array_filter($notifications, function($notification) {
+                return in_array($notification['severity'], ['critical', 'high']);
+            });
             
             return response()->json([
-                'unread_count' => count($notifications),
-                'debug' => 'Method executed successfully'
+                'unread_count' => count($criticalNotifications),
+                'total_notifications' => count($notifications),
+                'debug' => 'Time-filtered notifications (24h)',
+                'timestamp' => now()->toISOString()
             ]);
         } catch (\Exception $e) {
             \Log::error('Error in apiCount: ' . $e->getMessage());

@@ -276,6 +276,31 @@ class PublicController extends Controller
     }
     
     /**
+     * Get active public alerts (Endpoint untuk landing page)
+     */
+    public function getActiveAlerts()
+    {
+        $activeAlerts = Alert::where('severity', 'Awas')
+            ->whereNotNull('public_message')
+            ->where('is_active', true)
+            ->where('created_at', '>', now()->subHours(3)) // Alert dianggap aktif selama 3 jam
+            ->latest()
+            ->select('public_message', 'created_at', 'type', 'severity')
+            ->get()
+            ->map(function ($alert) {
+                return [
+                    'message' => $alert->public_message,
+                    'type' => $alert->type,
+                    'severity' => $alert->severity,
+                    'created_at' => $alert->created_at->format('H:i'),
+                    'time_ago' => $alert->created_at->diffForHumans(),
+                ];
+            });
+
+        return response()->json($activeAlerts);
+    }
+
+    /**
      * Get water level status berdasarkan threshold
      */
     private function getWaterLevelStatus($pumpHouseId, $waterLevel)

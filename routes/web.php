@@ -39,6 +39,9 @@ Route::get('/edukasi', [App\Http\Controllers\PublicController::class, 'education
 Route::get('/edukasi/{id}', [App\Http\Controllers\PublicController::class, 'educationDetail'])->name('public.education.detail');
 Route::get('/peta', [App\Http\Controllers\PublicController::class, 'map'])->name('public.map');
 
+// Public API endpoints (no authentication required)
+Route::get('/api/public-alerts', [App\Http\Controllers\PublicController::class, 'getActiveAlerts'])->name('api.public-alerts');
+
 // Auth routes
 Route::get('/login', [LoginController::class, 'showLoginForm'])->name('login');
 Route::post('/login', [LoginController::class, 'login']);

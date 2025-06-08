@@ -8,6 +8,7 @@ use App\Models\WaterLevelHistory;
 use App\Models\Alert;
 use App\Models\ThresholdSetting;
 use App\Models\PumpHouseThresholdSetting;
+use App\Services\AlertService;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Carbon\Carbon;
@@ -339,6 +340,9 @@ class WaterLevelController extends Controller
 
     private function checkAndCreateAlert($pumpHouse, $waterLevel)
     {
+        // Use AlertService to create contextualized water level alert
+        $alertService = app(AlertService::class);
+        
         // Get the highest exceeded threshold for this pump house
         $threshold = PumpHouseThresholdSetting::getExceededThresholdForPumpHouse($pumpHouse->id, $waterLevel);
         
@@ -348,28 +352,15 @@ class WaterLevelController extends Controller
         }
         
         if ($threshold && $threshold->name !== 'normal') {
-            $severity = $threshold->label;
-            $title = $threshold->label . ' - ' . $pumpHouse->name;
-            $description = $threshold->description . ' Ketinggian air saat ini: ' . $waterLevel . ' meter.';
-
             // Check if similar alert already exists in the last hour
-            $existingAlert = Alert::where('pump_house_id', $pumpHouse->id)
-                ->where('severity', $severity)
+            $existingAlert = Alert::where('type', 'water_level')
+                ->where('pump_house_id', $pumpHouse->id)
                 ->where('created_at', '>=', Carbon::now()->subHour())
                 ->first();
 
             if (!$existingAlert) {
-                Alert::create([
-                    'pump_house_id' => $pumpHouse->id,
-                    'title' => $title,
-                    'description' => $description,
-                    'severity' => $severity,
-                    'water_level' => $waterLevel . ' meter (' . $threshold->name . ')',
-                    'pump_status' => $pumpHouse->pump_count . '/' . $pumpHouse->pump_count . ' Aktif',
-                    'rainfall' => '0 mm/jam',
-                    'is_active' => true,
-                    'recipients' => json_encode(['admin@pumpstation.com']),
-                ]);
+                // Create alert using AlertService for contextualized messaging
+                $alertService->createWaterLevelAlert($pumpHouse, $waterLevel);
             }
         }
     }

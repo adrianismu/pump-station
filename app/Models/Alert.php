@@ -12,10 +12,13 @@ class Alert extends Model
     use HasFactory;
 
     protected $fillable = [
+        'type',
         'title',
         'pump_house_id',
         'severity',
         'description',
+        'internal_message',
+        'public_message',
         'water_level',
         'pump_status',
         'rainfall',
@@ -26,6 +29,7 @@ class Alert extends Model
 
     protected $casts = [
         'recipients' => 'array',
+        'is_active' => 'boolean',
     ];
 
     public function pump_house(): BelongsTo
@@ -36,5 +40,18 @@ class Alert extends Model
     public function actions(): HasMany
     {
         return $this->hasMany(AlertAction::class);
+    }
+    
+    /**
+     * Get active public alerts (Awas level with public message)
+     */
+    public static function getActivePublicAlerts()
+    {
+        return static::where('severity', 'Awas')
+            ->whereNotNull('public_message')
+            ->where('is_active', true)
+            ->where('created_at', '>', now()->subHours(3))
+            ->latest()
+            ->get();
     }
 }

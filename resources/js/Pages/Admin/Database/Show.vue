@@ -62,7 +62,7 @@
                               <div class="bg-muted/50 p-3 rounded-md">
                   <p class="text-xs text-muted-foreground mb-1">Pompa Aktif</p>
                   <p class="font-medium">{{ pumpHouse.active_pumps || 0 }}/{{ pumpHouse.pump_count || 1 }}</p>
-                </div>
+              </div>
               <div class="bg-muted/50 p-3 rounded-md">
                 <p class="text-xs text-muted-foreground mb-1">Tahun Dibangun</p>
                 <p class="font-medium">{{ pumpHouse.built_year }}</p>

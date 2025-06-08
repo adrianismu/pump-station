@@ -178,22 +178,53 @@
                   @click="viewNotification(notification)"
                 >
                   <div class="flex items-start gap-3">
+                    <!-- Weather Alert Icon -->
+                    <CloudRain 
+                      v-if="notification.type === 'weather_forecast'"
+                      class="w-5 h-5 text-blue-500 mt-0.5 flex-shrink-0" 
+                    />
+                    <!-- Water Level Alert Icon -->
+                    <Droplet 
+                      v-else-if="notification.type === 'water_level'"
+                      class="w-5 h-5 text-cyan-500 mt-0.5 flex-shrink-0" 
+                    />
+                    <!-- Threshold Exceeded Icon -->
                     <div 
-                      v-if="notification.type === 'threshold_exceeded'"
+                      v-else-if="notification.type === 'threshold_exceeded'"
                       class="w-2 h-2 rounded-full mt-2 flex-shrink-0"
                       :style="{ backgroundColor: notification.color }"
                     ></div>
+                    <!-- Warning Icon -->
                     <AlertCircle 
                       v-else-if="notification.type === 'warning'" 
                       class="w-5 h-5 text-warning mt-0.5 flex-shrink-0" 
                     />
+                    <!-- Default Info Icon -->
                     <Info v-else class="w-5 h-5 text-info mt-0.5 flex-shrink-0" />
                     
                     <div class="flex-1 min-w-0">
                       <div class="flex items-center justify-between">
                         <p class="font-medium text-sm truncate">{{ notification.title }}</p>
+                        
+                        <!-- Weather Alert Badge -->
                         <span 
-                          v-if="notification.type === 'threshold_exceeded'"
+                          v-if="notification.type === 'weather_forecast'"
+                          class="text-xs px-2 py-1 rounded-full bg-blue-100 text-blue-800 flex-shrink-0 ml-2"
+                        >
+                          Cuaca
+                        </span>
+                        
+                        <!-- Water Level Alert Badge -->
+                        <span 
+                          v-else-if="notification.type === 'water_level'"
+                          class="text-xs px-2 py-1 rounded-full bg-cyan-100 text-cyan-800 flex-shrink-0 ml-2"
+                        >
+                          Level Air
+                        </span>
+                        
+                        <!-- Threshold Badge -->
+                        <span 
+                          v-else-if="notification.type === 'threshold_exceeded'"
                           class="text-xs px-2 py-1 rounded-full text-white flex-shrink-0 ml-2"
                           :style="{ backgroundColor: notification.color }"
                         >
@@ -203,13 +234,32 @@
                       <p class="text-sm text-muted-foreground">{{ notification.message }}</p>
                       <div class="flex items-center justify-between mt-1">
                         <p class="text-xs text-muted-foreground">{{ notification.time_ago }}</p>
-                        <p 
-                          v-if="notification.type === 'threshold_exceeded'"
-                          class="text-xs font-medium"
-                          :style="{ color: notification.color }"
-                        >
-                          {{ notification.water_level }}m
-                        </p>
+                        <div class="flex items-center gap-2">
+                          <!-- Severity Indicator -->
+                          <span 
+                            v-if="notification.severity"
+                            class="text-xs px-1.5 py-0.5 rounded text-white"
+                            :class="{
+                              'bg-red-500': notification.severity === 'critical',
+                              'bg-orange-500': notification.severity === 'high',
+                              'bg-yellow-500': notification.severity === 'medium',
+                              'bg-gray-500': notification.severity === 'low'
+                            }"
+                          >
+                            {{ notification.severity === 'critical' ? 'Kritis' : 
+                                notification.severity === 'high' ? 'Tinggi' : 
+                                notification.severity === 'medium' ? 'Sedang' : 'Rendah' }}
+                          </span>
+                          
+                          <!-- Water Level Display -->
+                          <p 
+                            v-if="notification.type === 'threshold_exceeded' && notification.water_level"
+                            class="text-xs font-medium"
+                            :style="{ color: notification.color }"
+                          >
+                            {{ notification.water_level }}m
+                          </p>
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -506,11 +556,17 @@ const viewNotification = async (notification) => {
     }
   }
   
+  // Extract alert ID from notification ID for alert-based notifications
+  let alertId = notification.id;
+  if (typeof notification.id === 'string' && notification.id.startsWith('alert_')) {
+    alertId = notification.id.replace('alert_', '');
+  }
+  
   // For other notifications, mark as read and navigate
   if (!notification.read_at) {
     try {
       // Use web route as primary since we're using session auth
-      await axios.post(`/admin/notifications/${notification.id}/read`);
+      await axios.post(`/admin/notifications/${alertId}/read`);
       notification.read_at = new Date().toISOString();
       unreadNotificationsCount.value = Math.max(0, unreadNotificationsCount.value - 1);
     } catch (error) {
@@ -518,8 +574,8 @@ const viewNotification = async (notification) => {
     }
   }
   
-  // Navigate to notification detail page
-  router.visit(route('admin.notifications.show', notification.id));
+  // Navigate to notification detail page using the correct route name
+  router.visit(route('admin.notifications.show', alertId));
 };
 
 // Mark all notifications as read

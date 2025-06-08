@@ -4,6 +4,6 @@
     "numReplicas": 1,
     "sleepApplication": false,
     "restartPolicyType": "ON_FAILURE",
-    "startCommand": "bash start-combined.sh"
+    "startCommand": "php artisan schedule:work"
   }
 } 
