@@ -129,6 +129,11 @@ class WeatherService
             }
         }
 
+        // Fix wind speed field name (API returns wind_speed_10m)
+        if (isset($data['current']['wind_speed_10m'])) {
+            $processedData['current']['wind_speed'] = $data['current']['wind_speed_10m'];
+        }
+
         // Add flood risk analysis
         if (isset($data['current']['precipitation']) && isset($data['current']['weather_code'])) {
             $processedData['flood_risk'] = $this->calculateFloodRisk(

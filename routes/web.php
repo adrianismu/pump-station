@@ -67,7 +67,7 @@ Route::middleware(['auth'])->group(function () {
 });
 
 // Admin routes - Hanya untuk admin
-Route::middleware(['auth', 'verified'])->prefix('admin')->name('admin.')->group(function () {
+Route::middleware(['auth'])->prefix('admin')->name('admin.')->group(function () {
     // Routes yang bisa diakses admin dan petugas (dengan pembatasan)
     Route::middleware(['pump.access'])->group(function () {
         Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');

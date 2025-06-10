@@ -33,9 +33,6 @@ else
     echo "Running database migrations..."
     php artisan migrate --force
 
-    # Run database seeders
-    echo "Running database seeders..."
-    php artisan db:seed --force
 fi
 
 # Clear and cache configurations

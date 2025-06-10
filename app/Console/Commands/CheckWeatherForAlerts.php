@@ -88,15 +88,26 @@ class CheckWeatherForAlerts extends Command
     private function shouldCreateWeatherAlert($weatherData): bool
     {
         // Create alert if:
-        // 1. High precipitation probability (>75%)
-        // 2. High precipitation amount (>5mm)
-        // 3. Strong winds (>20 km/h) combined with rain
+        // 1. Severe weather codes (thunderstorms, heavy rain, etc.)
+        // 2. High precipitation probability (>75%)
+        // 3. High precipitation amount (>5mm)
+        // 4. Strong winds (>20 km/h) combined with rain
         
-        $precipitation = $weatherData['precipitation'] ?? 0;
-        $precipitationProb = $weatherData['precipitation_probability'] ?? 0;
-        $windSpeed = $weatherData['wind_speed'] ?? 0;
+        $weatherCode = $weatherData['current']['weather_code'] ?? 0;
+        $precipitation = $weatherData['current']['precipitation'] ?? 0;
+        $precipitationProb = $weatherData['current']['precipitation_probability'] ?? 0;
+        $windSpeed = $weatherData['current']['wind_speed'] ?? 0;
         
-        return ($precipitationProb > 75) || 
+        // Severe weather codes that always warrant alerts
+        $severeWeatherCodes = [
+            95, 96, 99,  // Thunderstorms
+            82,           // Heavy rain
+            65, 67,       // Heavy rain/freezing rain
+            75, 86,       // Heavy snow
+        ];
+        
+        return in_array($weatherCode, $severeWeatherCodes) ||
+               ($precipitationProb > 75) || 
                ($precipitation > 5.0) || 
                ($windSpeed > 20 && $precipitation > 2.0);
     }
