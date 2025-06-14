@@ -22,6 +22,13 @@ Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
     return $request->user();
 });
 
+// CSRF Token endpoint for frontend
+Route::get('/csrf-token', function () {
+    return response()->json([
+        'csrf_token' => csrf_token()
+    ]);
+});
+
 // Notification routes (using web auth middleware for compatibility with session auth)
 Route::middleware('auth:web')->group(function () {
     Route::get('/notifications', [NotificationController::class, 'index'])->name('api.notifications');

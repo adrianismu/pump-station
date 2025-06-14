@@ -60,6 +60,11 @@ class DatabaseController extends Controller
 
     public function create()
     {
+        // Ensure user is admin
+        if (!auth()->user()->isAdmin()) {
+            abort(403, 'Akses ditolak. Halaman ini khusus untuk administrator.');
+        }
+        
         return Inertia::render('Admin/Database/Create');
     }
     

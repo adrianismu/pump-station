@@ -154,3 +154,19 @@ Route::middleware(['auth'])->prefix('admin')->name('admin.')->group(function () 
 });
 
 require __DIR__.'/auth.php';
+
+// Health check endpoint for Railway monitoring
+Route::get('/health', function () {
+    return response()->json([
+        'status' => 'ok',
+        'timestamp' => now(),
+        'queue_connection' => config('queue.default'),
+        'notifications_count' => \Illuminate\Support\Facades\DB::table('notifications')->count(),
+        'failed_jobs_count' => \Illuminate\Support\Facades\Schema::hasTable('failed_jobs') 
+            ? \Illuminate\Support\Facades\DB::table('failed_jobs')->count() 
+            : 0,
+        'alerts_count' => \App\Models\Alert::count(),
+        'roles_seeded' => \Spatie\Permission\Models\Role::count() > 0,
+        'users_with_roles' => \App\Models\User::role('admin')->count() + \App\Models\User::role('petugas')->count(),
+    ]);
+});

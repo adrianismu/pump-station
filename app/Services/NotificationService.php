@@ -8,7 +8,9 @@ use App\Models\WaterLevelHistory;
 use App\Models\PumpHouse;
 use App\Models\Alert;
 use App\Models\User;
+use App\Notifications\WeatherAlertNotification;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\Log;
 
 class NotificationService
 {
@@ -68,21 +70,31 @@ class NotificationService
     }
 
     /**
-     * Store notifications in database
+     * Store notifications in database using Laravel notification system
      */
     private function storeNotifications(Alert $alert, array $recipients)
     {
-        // Implementation depends on your notification storage structure
-        // This is a placeholder - you can implement based on your needs
-        foreach ($recipients as $recipient) {
-            // Example: Create notification record
-            // Notification::create([
-            //     'user_id' => $recipient['user_id'],
-            //     'alert_id' => $alert->id,
-            //     'message' => $recipient['message'],
-            //     'type' => $recipient['type'],
-            //     'is_read' => false,
-            // ]);
+        try {
+            foreach ($recipients as $recipient) {
+                $user = User::find($recipient['user_id']);
+                if ($user) {
+                    $user->notify(new WeatherAlertNotification($alert));
+                    Log::info('Notification sent successfully', [
+                        'user_id' => $user->id,
+                        'user_email' => $user->email,
+                        'alert_id' => $alert->id,
+                        'alert_type' => $alert->type,
+                        'environment' => app()->environment()
+                    ]);
+                }
+            }
+        } catch (\Exception $e) {
+            Log::error('Failed to send notifications', [
+                'alert_id' => $alert->id,
+                'error' => $e->getMessage(),
+                'recipients_count' => count($recipients),
+                'environment' => app()->environment()
+            ]);
         }
     }
 

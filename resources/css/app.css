@@ -2,7 +2,6 @@
 @tailwind components;
 @tailwind utilities;
 
-
 @layer base {
   :root {
     --background: 0 0% 100%;
@@ -137,7 +136,8 @@
     height: 8px;
   }
   
-  *::-webkit-scrollbar-track {
+  *::-webki
+t-scrollbar-track {
     background: hsl(var(--background));
     border-radius: 4px;
   }

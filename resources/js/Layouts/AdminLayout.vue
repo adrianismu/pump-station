@@ -235,21 +235,7 @@
                       <div class="flex items-center justify-between mt-1">
                         <p class="text-xs text-muted-foreground">{{ notification.time_ago }}</p>
                         <div class="flex items-center gap-2">
-                          <!-- Severity Indicator -->
-                          <span 
-                            v-if="notification.severity"
-                            class="text-xs px-1.5 py-0.5 rounded text-white"
-                            :class="{
-                              'bg-red-500': notification.severity === 'critical',
-                              'bg-orange-500': notification.severity === 'high',
-                              'bg-yellow-500': notification.severity === 'medium',
-                              'bg-gray-500': notification.severity === 'low'
-                            }"
-                          >
-                            {{ notification.severity === 'critical' ? 'Kritis' : 
-                                notification.severity === 'high' ? 'Tinggi' : 
-                                notification.severity === 'medium' ? 'Sedang' : 'Rendah' }}
-                          </span>
+
                           
                           <!-- Water Level Display -->
                           <p 
