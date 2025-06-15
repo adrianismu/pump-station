@@ -66,7 +66,7 @@ class DatabaseController extends Controller
         if (!$user->isAdmin()) {
             abort(403, 'Anda tidak memiliki akses untuk membuat rumah pompa baru.');
         }
-
+        
         return Inertia::render('Admin/Database/Create', [
             'title' => 'Tambah Rumah Pompa',
             'breadcrumbs' => [

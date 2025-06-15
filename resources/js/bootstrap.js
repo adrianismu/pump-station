@@ -13,7 +13,7 @@ const getCsrfToken = () => {
 };
 
 const updateCsrfToken = (newToken) => {
-    const token = document.head.querySelector('meta[name="csrf-token"]');
+const token = document.head.querySelector('meta[name="csrf-token"]');
     if (token && newToken) {
         token.content = newToken;
         window.axios.defaults.headers.common['X-CSRF-TOKEN'] = newToken;

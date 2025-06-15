@@ -10,6 +10,7 @@ use App\Models\WaterLevelHistory;
 use App\Models\ThresholdSetting;
 use App\Models\PumpHouseThresholdSetting;
 use App\Services\ImageUploadService;
+use App\Services\PublicService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 use Inertia\Inertia;
@@ -18,10 +19,14 @@ use Carbon\Carbon;
 class PublicController extends Controller
 {
     protected $imageUploadService;
+    protected $publicService;
 
-    public function __construct(ImageUploadService $imageUploadService)
-    {
+    public function __construct(
+        ImageUploadService $imageUploadService,
+        PublicService $publicService
+    ) {
         $this->imageUploadService = $imageUploadService;
+        $this->publicService = $publicService;
     }
 
     /**
@@ -29,72 +34,9 @@ class PublicController extends Controller
      */
     public function index()
     {
-        // Get pump houses dengan data ketinggian air terbaru
-        $pumpHouses = PumpHouse::with(['waterLevelHistory' => function($query) {
-            $query->latest()->limit(1);
-        }])
-        ->select('id', 'name', 'address', 'lat', 'lng', 'status', 'pump_count', 'capacity')
-        ->get()
-        ->map(function ($pumpHouse) {
-            $latestWaterLevel = $pumpHouse->waterLevelHistory->first();
-            $waterLevel = $latestWaterLevel?->water_level ?? 0;
-            $status = $this->getWaterLevelStatus($pumpHouse->id, $waterLevel);
-            
-            return [
-                'id' => $pumpHouse->id,
-                'name' => $pumpHouse->name,
-                'location' => $pumpHouse->address, // Untuk display di weather card
-                'address' => $pumpHouse->address,
-                'latitude' => $pumpHouse->lat, // Untuk weather API
-                'longitude' => $pumpHouse->lng, // Untuk weather API
-                'lat' => $pumpHouse->lat,
-                'lng' => $pumpHouse->lng,
-                'status' => $pumpHouse->status,
-                'pump_count' => $pumpHouse->pump_count,
-                'capacity' => $pumpHouse->capacity,
-                'current_water_level' => $waterLevel,
-                'water_level_status' => $status,
-                'last_recorded' => $latestWaterLevel?->recorded_at,
-            ];
-        });
+        $data = $this->publicService->getLandingPageData();
         
-        // Get recent alerts untuk notifikasi publik
-        $recentAlerts = Alert::with('pump_house')
-            ->where('is_active', true)
-            ->orderBy('created_at', 'desc')
-            ->take(5)
-            ->get()
-            ->map(function ($alert) {
-                return [
-                    'id' => $alert->id,
-                    'title' => $alert->title,
-                    'description' => $alert->description,
-                    'severity' => $alert->severity,
-                    'pump_house_name' => $alert->pump_house->name,
-                    'created_at' => $alert->created_at,
-                ];
-            });
-        
-        // Get education content
-        $educationContent = EducationContent::select('id', 'title', 'content', 'type', 'created_at')
-            ->orderBy('created_at', 'desc')
-            ->take(6)
-            ->get();
-        
-        // Statistics untuk dashboard publik
-        $stats = [
-            'total_pump_houses' => PumpHouse::count(),
-            'active_pump_houses' => PumpHouse::where('status', 'Aktif')->count(),
-            'total_pumps' => PumpHouse::sum('pump_count'),
-            'recent_reports' => Report::where('created_at', '>=', Carbon::now()->subDays(7))->count(),
-        ];
-        
-        return Inertia::render('Public/Landing', [
-            'pumpHouses' => $pumpHouses,
-            'recentAlerts' => $recentAlerts,
-            'educationContent' => $educationContent,
-            'stats' => $stats,
-        ]);
+        return Inertia::render('Public/Landing', $data);
     }
     
     /**
@@ -129,38 +71,10 @@ class PublicController extends Controller
             return back()->withErrors($validator)->withInput();
         }
         
-        // Handle image uploads using ImageUploadService
-        $imageUrls = [];
-        $cloudinaryIds = [];
+        $report = $this->publicService->createReport($request);
         
-        if ($request->hasFile('images')) {
-            $uploadResults = $this->imageUploadService->uploadMultipleImages(
-                $request->file('images'), 
-                'reports'
-            );
-            
-            foreach ($uploadResults as $result) {
-                $imageUrls[] = $result['url'];
-                if ($result['cloudinary_id']) {
-                    $cloudinaryIds[] = $result['cloudinary_id'];
-                }
-            }
-        }
-        
-        $report = new Report();
-        $report->pump_house_id = $request->pump_house_id;
-        $report->reporter_name = $request->reporter_name;
-        $report->reporter_email = $request->reporter_email;
-        $report->reporter_phone = $request->reporter_phone;
-        $report->title = $request->title;
-        $report->description = $request->description;
-        $report->location = $request->location_detail ?? '';
-        $report->images = $imageUrls;
-        $report->cloudinary_ids = $cloudinaryIds;
-        $report->status = 'Belum Ditanggapi';
-        $report->save();
-        
-        return redirect()->route('public.report-success')->with('success', 'Laporan berhasil dikirim!');
+        return redirect()->route('public.report-success')
+            ->with('success', 'Laporan berhasil dikirim!');
     }
     
     /**
@@ -176,35 +90,9 @@ class PublicController extends Controller
      */
     public function education(Request $request)
     {
-        $query = EducationContent::where('published', true);
+        $data = $this->publicService->getEducationContent($request);
         
-        // Apply search filter
-        if ($request->filled('search')) {
-            $searchTerm = $request->search;
-            $query->where(function($q) use ($searchTerm) {
-                $q->where('title', 'like', "%{$searchTerm}%")
-                  ->orWhere('description', 'like', "%{$searchTerm}%")
-                  ->orWhere('content', 'like', "%{$searchTerm}%");
-            });
-        }
-        
-        // Apply type filter
-        if ($request->filled('type') && $request->type !== 'all') {
-            $query->where('type', $request->type);
-        }
-        
-        // Order by date and paginate
-        $educationContent = $query->orderBy('date', 'desc')
-                                  ->paginate(12)
-                                  ->withQueryString(); // Preserve query parameters in pagination links
-        
-        return Inertia::render('Public/Education', [
-            'educationContent' => $educationContent,
-            'filters' => [
-                'search' => $request->search,
-                'type' => $request->type,
-            ],
-        ]);
+        return Inertia::render('Public/Education', $data);
     }
     
     /**
@@ -212,32 +100,9 @@ class PublicController extends Controller
      */
     public function educationDetail($id)
     {
-        $content = EducationContent::where('published', true)->findOrFail($id);
+        $data = $this->publicService->getEducationDetail($id);
         
-        // Get related content (published only)
-        $relatedContent = EducationContent::where('id', '!=', $id)
-            ->where('published', true)
-            ->where('type', $content->type)
-            ->orderBy('date', 'desc')
-            ->take(3)
-            ->get();
-        
-        // If not enough related content by type, get more recent content
-        if ($relatedContent->count() < 3) {
-            $additionalContent = EducationContent::where('id', '!=', $id)
-                ->where('published', true)
-                ->whereNotIn('id', $relatedContent->pluck('id')->toArray())
-                ->orderBy('date', 'desc')
-                ->take(3 - $relatedContent->count())
-                ->get();
-                
-            $relatedContent = $relatedContent->concat($additionalContent);
-        }
-        
-        return Inertia::render('Public/EducationDetail', [
-            'content' => $content,
-            'relatedContent' => $relatedContent,
-        ]);
+        return Inertia::render('Public/EducationDetail', $data);
     }
     
     /**
@@ -245,30 +110,7 @@ class PublicController extends Controller
      */
     public function map()
     {
-        // Get all pump houses dengan status terkini
-        $pumpHouses = PumpHouse::with(['waterLevelHistory' => function($query) {
-            $query->latest()->limit(1);
-        }])
-        ->get()
-        ->map(function ($pumpHouse) {
-            $latestWaterLevel = $pumpHouse->waterLevelHistory->first();
-            $waterLevel = $latestWaterLevel?->water_level ?? 0;
-            $status = $this->getWaterLevelStatus($pumpHouse->id, $waterLevel);
-            
-            return [
-                'id' => $pumpHouse->id,
-                'name' => $pumpHouse->name,
-                'address' => $pumpHouse->address,
-                'lat' => $pumpHouse->lat,
-                'lng' => $pumpHouse->lng,
-                'status' => $pumpHouse->status,
-                'pump_count' => $pumpHouse->pump_count,
-                'capacity' => $pumpHouse->capacity,
-                'current_water_level' => $waterLevel,
-                'water_level_status' => $status,
-                'last_recorded' => $latestWaterLevel?->recorded_at,
-            ];
-        });
+        $pumpHouses = $this->publicService->getPumpHousesForMap();
         
         return Inertia::render('Public/Map', [
             'pumpHouses' => $pumpHouses,
@@ -280,24 +122,9 @@ class PublicController extends Controller
      */
     public function getActiveAlerts()
     {
-        $activeAlerts = Alert::where('severity', 'Awas')
-            ->whereNotNull('public_message')
-            ->where('is_active', true)
-            ->where('created_at', '>', now()->subHours(3)) // Alert dianggap aktif selama 3 jam
-            ->latest()
-            ->select('public_message', 'created_at', 'type', 'severity')
-            ->get()
-            ->map(function ($alert) {
-                return [
-                    'message' => $alert->public_message,
-                    'type' => $alert->type,
-                    'severity' => $alert->severity,
-                    'created_at' => $alert->created_at->format('H:i'),
-                    'time_ago' => $alert->created_at->diffForHumans(),
-                ];
-            });
-
-        return response()->json($activeAlerts);
+        $alerts = $this->publicService->getActiveAlerts();
+        
+        return response()->json($alerts);
     }
 
     /**

@@ -267,8 +267,8 @@
 </template>
 
 <script setup>
-import { ref, reactive } from 'vue'
-import { router } from '@inertiajs/vue3'
+import { ref, computed } from 'vue'
+import { useForm } from '@inertiajs/vue3'
 import PublicLayout from '@/Layouts/PublicLayout.vue'
 import { Button } from '@/Components/ui/button'
 import { Card } from '@/Components/ui/card'
@@ -300,24 +300,23 @@ const props = defineProps({
   pumpHouses: Array,
 })
 
-const isSubmitting = ref(false)
-const imagePreview = ref([])
-const selectedImages = ref([])
-
-const form = reactive({
+const form = useForm({
   pump_house_id: '',
   reporter_name: '',
-  reporter_email: '',
   reporter_phone: '',
+  reporter_email: '',
   title: '',
   description: '',
   location_detail: '',
+  images: []
 })
 
+const imagePreview = ref([])
+const selectedImages = ref([])
+const isSubmitting = ref(false)
+
 const resetForm = () => {
-  Object.keys(form).forEach(key => {
-    form[key] = ''
-  })
+  form.reset()
   imagePreview.value = []
   selectedImages.value = []
 }
@@ -361,41 +360,36 @@ const removeImage = (index) => {
   selectedImages.value.splice(index, 1)
 }
 
-const submitReport = async () => {
+const submitReport = () => {
   isSubmitting.value = true
   
-  try {
-    // Create FormData for file upload
-    const formData = new FormData()
-    
-    // Add form fields
-    Object.keys(form).forEach(key => {
-      if (form[key]) {
-        formData.append(key, form[key])
-      }
-    })
-    
-    // Add images
-    selectedImages.value.forEach((image, index) => {
-      formData.append(`images[${index}]`, image)
-    })
-    
-    router.post(route('public.submit-report'), formData, {
-      forceFormData: true,
-      onSuccess: () => {
-        // Form akan di-reset otomatis oleh Inertia redirect
-      },
-      onError: (errors) => {
-        console.error('Validation errors:', errors)
-      },
-      onFinish: () => {
-        isSubmitting.value = false
-      }
-    })
-  } catch (error) {
-    console.error('Submit error:', error)
-    isSubmitting.value = false
-  }
+  // Create FormData for file upload
+  const formData = new FormData()
+  
+  // Add form fields
+  Object.keys(form).forEach(key => {
+    if (form[key]) {
+      formData.append(key, form[key])
+    }
+  })
+  
+  // Add images
+  selectedImages.value.forEach((image, index) => {
+    formData.append(`images[${index}]`, image)
+  })
+  
+  form.post(route('public.submit-report'), {
+    forceFormData: true,
+    onSuccess: () => {
+      // Form akan di-reset otomatis oleh Inertia redirect
+    },
+    onError: (errors) => {
+      console.error('Validation errors:', errors)
+    },
+    onFinish: () => {
+      isSubmitting.value = false
+    }
+  })
 }
 </script> 
  
