@@ -58,7 +58,6 @@ Route::middleware(['auth'])->group(function () {
     // Petugas routes
     Route::middleware(['petugas.only'])->group(function () {
         Route::get('/petugas/dashboard', [DashboardControllerAlias::class, 'petugasDashboard'])->name('petugas.dashboard');
-        // Route::get('/tasks', [TaskController::class, 'index'])->name('tasks.index');
     });
 
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
@@ -74,6 +73,7 @@ Route::middleware(['auth'])->prefix('admin')->name('admin.')->group(function () 
         
         // Database Map and Detail - Dapat diakses admin dan petugas sesuai akses
         Route::get('/map', [MapController::class, 'index'])->name('map');
+        Route::get('/database/create', [DatabaseController::class, 'create'])->name('database.create');
         Route::get('/database/{id}', [DatabaseController::class, 'show'])->name('database.show')->middleware('pump.access:read');
         Route::get('/database/{pumpHouse}/edit', [DatabaseController::class, 'edit'])->name('database.edit')->middleware('pump.access:write');
         Route::put('/database/{pumpHouse}', [DatabaseController::class, 'update'])->name('database.update')->middleware('pump.access:write');
@@ -123,7 +123,6 @@ Route::middleware(['auth'])->prefix('admin')->name('admin.')->group(function () 
         
         // Database Management - Admin only
         Route::get('/database', [DatabaseController::class, 'index'])->name('database');
-        Route::get('/database/create', [DatabaseController::class, 'create'])->name('database.create');
         Route::post('/database', [DatabaseController::class, 'store'])->name('database.store');
         Route::delete('/database/{pumpHouse}', [DatabaseController::class, 'destroy'])->name('database.destroy');
         

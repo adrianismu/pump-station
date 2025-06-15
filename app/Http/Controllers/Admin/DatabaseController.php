@@ -60,12 +60,20 @@ class DatabaseController extends Controller
 
     public function create()
     {
-        // Ensure user is admin
-        if (!auth()->user()->isAdmin()) {
-            abort(403, 'Akses ditolak. Halaman ini khusus untuk administrator.');
-        }
+        $user = auth()->user();
         
-        return Inertia::render('Admin/Database/Create');
+        // Authorization check untuk create
+        if (!$user->isAdmin()) {
+            abort(403, 'Anda tidak memiliki akses untuk membuat rumah pompa baru.');
+        }
+
+        return Inertia::render('Admin/Database/Create', [
+            'title' => 'Tambah Rumah Pompa',
+            'breadcrumbs' => [
+                ['label' => 'Database', 'url' => route('admin.database')],
+                ['label' => 'Tambah Baru', 'url' => '#'],
+            ],
+        ]);
     }
     
     public function store(Request $request)
