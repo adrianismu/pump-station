@@ -38,7 +38,7 @@ class CheckWeatherForAlerts extends Command
      */
     public function handle()
     {
-        $this->info('🌦️  Checking weather forecasts for alert conditions...');
+        $this->info('Checking weather forecasts for alert conditions...');
 
         try {
             // Get unique coordinates to avoid duplicates

@@ -2,56 +2,7 @@
   <div>
     <h1 class="text-2xl font-bold mb-6">Peta Rumah Pompa</h1>
 
-    <!-- Stats Cards -->
-    <div class="grid gap-4 md:grid-cols-4 mb-8">
-      <Card class="p-4">
-        <div class="flex items-center gap-3">
-          <div class="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
-            <Home class="h-5 w-5 text-blue-600" />
-          </div>
-          <div>
-            <p class="text-sm text-muted-foreground">Total Rumah Pompa</p>
-            <p class="text-2xl font-bold">{{ pumpHouses.length }}</p>
-          </div>
-        </div>
-      </Card>
-
-      <Card class="p-4">
-        <div class="flex items-center gap-3">
-          <div class="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center">
-            <CheckCircle class="h-5 w-5 text-green-600" />
-          </div>
-          <div>
-            <p class="text-sm text-muted-foreground">Status Normal</p>
-            <p class="text-2xl font-bold text-green-600">{{ normalCount }}</p>
-          </div>
-        </div>
-      </Card>
-
-      <Card class="p-4">
-        <div class="flex items-center gap-3">
-          <div class="w-10 h-10 bg-yellow-100 rounded-lg flex items-center justify-center">
-            <AlertTriangle class="h-5 w-5 text-yellow-600" />
-          </div>
-          <div>
-            <p class="text-sm text-muted-foreground">Perlu Perhatian</p>
-            <p class="text-2xl font-bold text-yellow-600">{{ warningCount }}</p>
-          </div>
-        </div>
-      </Card>
-
-      <Card class="p-4">
-        <div class="flex items-center gap-3">
-          <div class="w-10 h-10 bg-red-100 rounded-lg flex items-center justify-center">
-            <AlertCircle class="h-5 w-5 text-red-600" />
-          </div>
-          <div>
-            <p class="text-sm text-muted-foreground">Status Kritis</p>
-            <p class="text-2xl font-bold text-red-600">{{ criticalCount }}</p>
-          </div>
-        </div>
-      </Card>
-    </div>
+   
 
     <!-- Map Container -->
     <div class="grid gap-6 lg:grid-cols-4">

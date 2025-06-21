@@ -1,6 +1,6 @@
 <template>
-  <div class="py-12">
-    <div class="container px-4">
+
+    <div class="container mx-auto px-4 py-8">
       <!-- Header -->
       <div class="text-center mb-8">
         <h1 class="text-4xl font-bold mb-4">Peta Rumah Pompa</h1>
@@ -10,7 +10,7 @@
       </div>
 
       <!-- Stats Cards -->
-      <div class="grid gap-4 md:grid-cols-4 mb-8">
+      <div class="grid gap-4 mb-6 sm:grid-cols-2 lg:grid-cols-3">
         <Card class="p-4">
           <div class="flex items-center gap-3">
             <div class="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
@@ -61,157 +61,158 @@
       </div>
 
       <!-- Map Container -->
-      <div class="grid gap-6 lg:grid-cols-4">
-        <!-- Map -->
-        <div class="lg:col-span-3">
-          <Card class="overflow-hidden">
-            <div class="p-4 border-b">
-              <div class="flex items-center justify-between">
-                <h2 class="text-lg font-semibold">Peta Lokasi Rumah Pompa</h2>
-                <div class="flex items-center gap-2">
-                  <Button variant="outline" size="sm" @click="refreshMap" :disabled="mapLoading">
-                    <RotateCcw class="h-4 w-4 mr-2" :class="{ 'animate-spin': mapLoading }" />
-                    {{ mapLoading ? 'Memuat...' : 'Refresh' }}
-                  </Button>
-                  <Button variant="outline" size="sm" @click="centerMap" :disabled="!mapInitialized">
-                    <MapPin class="h-4 w-4 mr-2" />
-                    Pusat Peta
+      <div class="max-w-7xl mx-auto">
+        <div class="grid gap-6 lg:grid-cols-4">
+          <!-- Map -->
+          <div class="lg:col-span-3">
+            <Card class="overflow-hidden">
+              <div class="p-4 border-b">
+                <div class="flex items-center justify-between">
+                  <h2 class="text-lg font-semibold">Peta Lokasi Rumah Pompa</h2>
+                  <div class="flex items-center gap-2">
+                    <Button variant="outline" size="sm" @click="refreshMap" :disabled="mapLoading">
+                      <RotateCcw class="h-4 w-4 mr-2" :class="{ 'animate-spin': mapLoading }" />
+                      {{ mapLoading ? 'Memuat...' : 'Refresh' }}
+                    </Button>
+                    <Button variant="outline" size="sm" @click="centerMap" :disabled="!mapInitialized">
+                      <MapPin class="h-4 w-4 mr-2" />
+                      Pusat Peta
+                    </Button>
+                  </div>
+                </div>
+              </div>
+              
+              <!-- Map Error State -->
+              <div v-if="mapError" class="h-[600px] w-full flex items-center justify-center bg-muted">
+                <div class="text-center">
+                  <AlertCircle class="h-16 w-16 text-destructive mx-auto mb-4" />
+                  <h3 class="text-lg font-semibold mb-2">Gagal Memuat Peta</h3>
+                  <p class="text-muted-foreground mb-4">{{ mapError }}</p>
+                  <Button @click="initMap" variant="outline">
+                    <RotateCcw class="h-4 w-4 mr-2" />
+                    Coba Lagi
                   </Button>
                 </div>
               </div>
-            </div>
-            
-            <!-- Map Error State -->
-            <div v-if="mapError" class="h-[600px] w-full flex items-center justify-center bg-muted">
-              <div class="text-center">
-                <AlertCircle class="h-16 w-16 text-destructive mx-auto mb-4" />
-                <h3 class="text-lg font-semibold mb-2">Gagal Memuat Peta</h3>
-                <p class="text-muted-foreground mb-4">{{ mapError }}</p>
-                <Button @click="initMap" variant="outline">
-                  <RotateCcw class="h-4 w-4 mr-2" />
-                  Coba Lagi
-                </Button>
+              
+              <!-- Map Loading State -->
+              <div v-else-if="mapLoading" class="h-[600px] w-full flex items-center justify-center bg-muted">
+                <div class="text-center">
+                  <div class="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+                  <p class="text-muted-foreground">Memuat peta...</p>
+                </div>
               </div>
-            </div>
-            
-            <!-- Map Loading State -->
-            <div v-else-if="mapLoading" class="h-[600px] w-full flex items-center justify-center bg-muted">
-              <div class="text-center">
-                <div class="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-                <p class="text-muted-foreground">Memuat peta...</p>
-              </div>
-            </div>
-            
-            <!-- Map Container -->
-            <div v-else id="map" class="h-[600px] w-full"></div>
-          </Card>
-        </div>
+              
+              <!-- Map Container -->
+              <div v-else id="map" class="h-[600px] w-full"></div>
+            </Card>
+          </div>
 
-        <!-- Sidebar -->
-        <div class="space-y-6">
-          <!-- Legend -->
-          <Card class="p-4">
-            <h3 class="font-semibold mb-4">Legenda Status</h3>
-            <div class="space-y-3">
-              <div class="flex items-center gap-3">
-                <div class="w-4 h-4 bg-green-500 rounded-full"></div>
-                <span class="text-sm">Normal</span>
+          <!-- Sidebar -->
+          <div class="space-y-6">
+            <!-- Legend -->
+            <Card class="p-4">
+              <h3 class="font-semibold mb-4">Legenda Status</h3>
+              <div class="space-y-3">
+                <div class="flex items-center gap-3">
+                  <div class="w-4 h-4 bg-green-500 rounded-full"></div>
+                  <span class="text-sm">Normal</span>
+                </div>
+                <div class="flex items-center gap-3">
+                  <div class="w-4 h-4 bg-yellow-500 rounded-full"></div>
+                  <span class="text-sm">Peringatan</span>
+                </div>
+                <div class="flex items-center gap-3">
+                  <div class="w-4 h-4 bg-red-500 rounded-full"></div>
+                  <span class="text-sm">Kritis</span>
+                </div>
+                <div class="flex items-center gap-3">
+                  <div class="w-4 h-4 bg-gray-400 rounded-full"></div>
+                  <span class="text-sm">Tidak Ada Data</span>
+                </div>
               </div>
-              <div class="flex items-center gap-3">
-                <div class="w-4 h-4 bg-yellow-500 rounded-full"></div>
-                <span class="text-sm">Peringatan</span>
-              </div>
-              <div class="flex items-center gap-3">
-                <div class="w-4 h-4 bg-red-500 rounded-full"></div>
-                <span class="text-sm">Kritis</span>
-              </div>
-              <div class="flex items-center gap-3">
-                <div class="w-4 h-4 bg-gray-400 rounded-full"></div>
-                <span class="text-sm">Tidak Ada Data</span>
-              </div>
-            </div>
-          </Card>
+            </Card>
 
-          <!-- Selected Pump House Info -->
-          <Card v-if="selectedPumpHouse" class="p-4">
-            <h3 class="font-semibold mb-4">Informasi Detail</h3>
-            <div class="space-y-3">
-              <div>
-                <p class="text-sm text-muted-foreground">Nama</p>
-                <p class="font-medium">{{ selectedPumpHouse.name }}</p>
-              </div>
-              <div>
-                <p class="text-sm text-muted-foreground">Alamat</p>
-                <p class="text-sm">{{ selectedPumpHouse.address }}</p>
-              </div>
-              <div>
-                <p class="text-sm text-muted-foreground">Status Pompa</p>
-                <Badge :variant="selectedPumpHouse.status === 'Aktif' ? 'default' : 'secondary'">
-                  {{ selectedPumpHouse.status }}
-                </Badge>
-              </div>
-              <div>
-                <p class="text-sm text-muted-foreground">Jumlah Pompa</p>
-                <p class="font-medium">{{ selectedPumpHouse.pump_count }} unit</p>
-              </div>
-              <div>
-                <p class="text-sm text-muted-foreground">Kapasitas</p>
-                <p class="font-medium">{{ selectedPumpHouse.capacity }} L/s</p>
-              </div>
-              <div>
-                <p class="text-sm text-muted-foreground">Ketinggian Air</p>
-                <div class="flex items-center gap-2">
-                  <Droplet class="h-4 w-4 text-blue-500" />
-                  <span class="font-medium">{{ selectedPumpHouse.current_water_level }}m</span>
-                  <Badge 
-                    v-if="selectedPumpHouse.water_level_status"
-                    :style="{ 
-                      backgroundColor: selectedPumpHouse.water_level_status.color + '20', 
-                      color: selectedPumpHouse.water_level_status.color,
-                      borderColor: selectedPumpHouse.water_level_status.color 
-                    }"
-                    class="border text-xs"
-                  >
-                    {{ selectedPumpHouse.water_level_status.label }}
+            <!-- Selected Pump House Info -->
+            <Card v-if="selectedPumpHouse" class="p-4">
+              <h3 class="font-semibold mb-4">Informasi Detail</h3>
+              <div class="space-y-3">
+                <div>
+                  <p class="text-sm text-muted-foreground">Nama</p>
+                  <p class="font-medium">{{ selectedPumpHouse.name }}</p>
+                </div>
+                <div>
+                  <p class="text-sm text-muted-foreground">Alamat</p>
+                  <p class="text-sm">{{ selectedPumpHouse.address }}</p>
+                </div>
+                <div>
+                  <p class="text-sm text-muted-foreground">Status Pompa</p>
+                  <Badge :variant="selectedPumpHouse.status === 'Aktif' ? 'default' : 'secondary'">
+                    {{ selectedPumpHouse.status }}
                   </Badge>
                 </div>
+                <div>
+                  <p class="text-sm text-muted-foreground">Jumlah Pompa</p>
+                  <p class="font-medium">{{ selectedPumpHouse.pump_count }} unit</p>
+                </div>
+                <div>
+                  <p class="text-sm text-muted-foreground">Kapasitas</p>
+                  <p class="font-medium">{{ selectedPumpHouse.capacity }} L/s</p>
+                </div>
+                <div>
+                  <p class="text-sm text-muted-foreground">Ketinggian Air</p>
+                  <div class="flex items-center gap-2">
+                    <Droplet class="h-4 w-4 text-blue-500" />
+                    <span class="font-medium">{{ selectedPumpHouse.current_water_level }}m</span>
+                    <Badge 
+                      v-if="selectedPumpHouse.water_level_status"
+                      :style="{ 
+                        backgroundColor: selectedPumpHouse.water_level_status.color + '20', 
+                        color: selectedPumpHouse.water_level_status.color,
+                        borderColor: selectedPumpHouse.water_level_status.color 
+                      }"
+                      class="border text-xs"
+                    >
+                      {{ selectedPumpHouse.water_level_status.label }}
+                    </Badge>
+                  </div>
+                </div>
+                <div v-if="selectedPumpHouse.last_recorded">
+                  <p class="text-sm text-muted-foreground">Terakhir Diperbarui</p>
+                  <p class="text-sm">{{ formatTimeAgo(selectedPumpHouse.last_recorded) }}</p>
+                </div>
               </div>
-              <div v-if="selectedPumpHouse.last_recorded">
-                <p class="text-sm text-muted-foreground">Terakhir Diperbarui</p>
-                <p class="text-sm">{{ formatTimeAgo(selectedPumpHouse.last_recorded) }}</p>
+              
+              <div class="mt-4 pt-4 border-t">
+                <Button size="sm" variant="outline" as="a" :href="route('public.reports')" class="w-full">
+                  <FileText class="h-4 w-4 mr-2" />
+                  Laporkan Masalah
+                </Button>
               </div>
-            </div>
-            
-            <div class="mt-4 pt-4 border-t">
-              <Button size="sm" variant="outline" as="a" :href="route('public.reports')" class="w-full">
-                <FileText class="h-4 w-4 mr-2" />
-                Laporkan Masalah
-              </Button>
-            </div>
-          </Card>
+            </Card>
 
-          <!-- Quick Actions -->
-          <Card class="p-4">
-            <h3 class="font-semibold mb-4">Aksi Cepat</h3>
-            <div class="space-y-2">
-              <Button variant="outline" size="sm" as="a" :href="route('public.reports')" class="w-full justify-start">
-                <FileText class="h-4 w-4 mr-2" />
-                Buat Laporan
-              </Button>
-              <Button variant="outline" size="sm" as="a" :href="route('public.education')" class="w-full justify-start">
-                <BookOpen class="h-4 w-4 mr-2" />
-                Edukasi
-              </Button>
-              <Button variant="outline" size="sm" as="a" href="tel:112" class="w-full justify-start">
-                <Phone class="h-4 w-4 mr-2" />
-                Kontak Darurat
-              </Button>
-            </div>
-          </Card>
+            <!-- Quick Actions -->
+            <Card class="p-4">
+              <h3 class="font-semibold mb-4">Aksi Cepat</h3>
+              <div class="space-y-2">
+                <Button variant="outline" size="sm" as="a" :href="route('public.reports')" class="w-full justify-start">
+                  <FileText class="h-4 w-4 mr-2" />
+                  Buat Laporan
+                </Button>
+                <Button variant="outline" size="sm" as="a" :href="route('public.education')" class="w-full justify-start">
+                  <BookOpen class="h-4 w-4 mr-2" />
+                  Edukasi
+                </Button>
+                <Button variant="outline" size="sm" as="a" href="tel:112" class="w-full justify-start">
+                  <Phone class="h-4 w-4 mr-2" />
+                  Kontak Darurat
+                </Button>
+              </div>
+            </Card>
+          </div>
         </div>
       </div>
     </div>
-  </div>
 </template>
 
 <script setup>

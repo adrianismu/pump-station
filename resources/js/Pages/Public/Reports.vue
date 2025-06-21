@@ -363,33 +363,33 @@ const removeImage = (index) => {
 const submitReport = () => {
   isSubmitting.value = true
   
-  // Create FormData for file upload
-  const formData = new FormData()
-  
-  // Add form fields
-  Object.keys(form).forEach(key => {
-    if (form[key]) {
-      formData.append(key, form[key])
-    }
-  })
-  
-  // Add images
-  selectedImages.value.forEach((image, index) => {
-    formData.append(`images[${index}]`, image)
-  })
-  
+    // Create FormData for file upload
+    const formData = new FormData()
+    
+    // Add form fields
+    Object.keys(form).forEach(key => {
+      if (form[key]) {
+        formData.append(key, form[key])
+      }
+    })
+    
+    // Add images
+    selectedImages.value.forEach((image, index) => {
+      formData.append(`images[${index}]`, image)
+    })
+    
   form.post(route('public.submit-report'), {
-    forceFormData: true,
-    onSuccess: () => {
-      // Form akan di-reset otomatis oleh Inertia redirect
-    },
-    onError: (errors) => {
-      console.error('Validation errors:', errors)
-    },
-    onFinish: () => {
-      isSubmitting.value = false
-    }
-  })
+      forceFormData: true,
+      onSuccess: () => {
+        // Form akan di-reset otomatis oleh Inertia redirect
+      },
+      onError: (errors) => {
+        console.error('Validation errors:', errors)
+      },
+      onFinish: () => {
+        isSubmitting.value = false
+      }
+    })
 }
 </script> 
  

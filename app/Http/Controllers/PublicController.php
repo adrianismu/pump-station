@@ -123,7 +123,7 @@ class PublicController extends Controller
     public function getActiveAlerts()
     {
         $alerts = $this->publicService->getActiveAlerts();
-        
+
         return response()->json($alerts);
     }
 
