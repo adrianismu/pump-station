@@ -1,0 +1,3 @@
+# Let Railway auto-detect Laravel and handle PHP/Composer/Node setup
+[start]
+cmd = "bash start.sh" 
