@@ -117,10 +117,9 @@ class WaterLevelController extends Controller
             'recorded_at' => $recordedAt,
         ]);
 
-        // Update pump house current water level
+        // Update pump house last_updated timestamp only
         $pumpHouse = PumpHouse::find($request->pump_house_id);
         $pumpHouse->update([
-            'water_level' => $request->water_level . ' meter',
             'last_updated' => $recordedAt,
         ]);
 
@@ -217,7 +216,7 @@ class WaterLevelController extends Controller
             'recorded_at' => Carbon::parse($request->recorded_at),
         ]);
 
-        // Update pump house current water level if this is the latest record
+        // Update pump house last_updated timestamp if this is the latest record
         $latestRecord = WaterLevelHistory::where('pump_house_id', $request->pump_house_id)
             ->latest('recorded_at')
             ->first();
@@ -225,7 +224,6 @@ class WaterLevelController extends Controller
         if ($latestRecord && $latestRecord->id === $waterLevel->id) {
             $pumpHouse = PumpHouse::find($request->pump_house_id);
             $pumpHouse->update([
-                'water_level' => $request->water_level . ' meter',
                 'last_updated' => $waterLevel->recorded_at,
             ]);
         }
@@ -248,7 +246,7 @@ class WaterLevelController extends Controller
         
         $waterLevel->delete();
 
-        // Update pump house current water level with the latest remaining record
+        // Update pump house last_updated timestamp with the latest remaining record
         $latestRecord = WaterLevelHistory::where('pump_house_id', $pumpHouseId)
             ->latest('recorded_at')
             ->first();
@@ -256,7 +254,6 @@ class WaterLevelController extends Controller
         if ($latestRecord) {
             $pumpHouse = PumpHouse::find($pumpHouseId);
             $pumpHouse->update([
-                'water_level' => $latestRecord->water_level . ' meter',
                 'last_updated' => $latestRecord->recorded_at,
             ]);
         }

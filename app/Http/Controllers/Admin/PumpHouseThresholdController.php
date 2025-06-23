@@ -148,9 +148,19 @@ class PumpHouseThresholdController extends Controller
             abort(403, 'Anda tidak memiliki akses write ke rumah pompa ini.');
         }
         
-        $pumpHouse = PumpHouse::with(['threshold_settings' => function($query) {
-            $query->orderBy('water_level', 'asc');
-        }])->findOrFail($pumpHouseId);
+        $pumpHouse = PumpHouse::with([
+            'threshold_settings' => function($query) {
+                $query->orderBy('water_level', 'asc');
+            },
+            'waterLevelHistory' => function($query) {
+                $query->orderBy('recorded_at', 'desc')->limit(1);
+            }
+        ])->findOrFail($pumpHouseId);
+
+        // Add current water level data
+        $latestWaterLevel = $pumpHouse->waterLevelHistory->first();
+        $pumpHouse->current_water_level = $latestWaterLevel?->water_level ?? null;
+        $pumpHouse->last_recorded_at = $latestWaterLevel?->recorded_at ?? null;
 
         // If no thresholds exist for this pump house, copy from default
         if ($pumpHouse->threshold_settings->isEmpty()) {

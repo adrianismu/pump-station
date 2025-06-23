@@ -30,7 +30,7 @@
         <CardContent>
           <div class="flex items-center justify-between p-4 bg-muted rounded-lg">
             <div>
-              <p class="text-lg font-semibold">{{ getCurrentWaterLevel() }}</p>
+              <p class="text-lg font-semibold">{{ currentWaterLevel }}</p>
               <p class="text-sm text-muted-foreground">
                 {{ pumpHouse.last_updated ? formatDate(pumpHouse.last_updated) : 'Belum ada data' }}
               </p>
@@ -306,21 +306,38 @@ const formatDate = (dateString) => {
   });
 };
 
-const getCurrentWaterLevel = () => {
-  if (!props.pumpHouse.water_level) return 'N/A';
-  const level = parseFloat(props.pumpHouse.water_level.toString().replace(' meter', ''));
-  return isNaN(level) ? 'N/A' : `${level} meter`;
-};
+const currentWaterLevel = computed(() => {
+  if (!props.pumpHouse.current_water_level && (!props.pumpHouse.water_level_history || props.pumpHouse.water_level_history.length === 0)) return 'N/A';
+  
+  let level;
+  if (props.pumpHouse.current_water_level !== null && props.pumpHouse.current_water_level !== undefined) {
+    level = parseFloat(props.pumpHouse.current_water_level);
+  } else {
+    level = parseFloat(props.pumpHouse.water_level_history[0].water_level);
+  }
+  
+  return isNaN(level) ? 'N/A' : `${level.toFixed(2)} meter`;
+});
+
+const currentLevelForComparison = computed(() => {
+  if (!props.pumpHouse.current_water_level && (!props.pumpHouse.water_level_history || props.pumpHouse.water_level_history.length === 0)) return null;
+  
+  let level;
+  if (props.pumpHouse.current_water_level !== null && props.pumpHouse.current_water_level !== undefined) {
+    level = parseFloat(props.pumpHouse.current_water_level);
+  } else {
+    level = parseFloat(props.pumpHouse.water_level_history[0].water_level);
+  }
+  
+  return isNaN(level) ? null : level;
+});
 
 const getCurrentLevelStatus = () => {
-  if (!props.pumpHouse.water_level) return 'N/A';
-  
-  const currentLevel = parseFloat(props.pumpHouse.water_level.toString().replace(' meter', ''));
-  if (isNaN(currentLevel)) return 'N/A';
+  if (!currentLevelForComparison.value) return 'N/A';
   
   // Check against current thresholds
   const exceededThreshold = form.thresholds
-    .filter(t => t.is_active && currentLevel >= t.water_level)
+    .filter(t => t.is_active && currentLevelForComparison.value >= t.water_level)
     .sort((a, b) => b.water_level - a.water_level)[0];
   
   return exceededThreshold ? exceededThreshold.label : 'Normal';

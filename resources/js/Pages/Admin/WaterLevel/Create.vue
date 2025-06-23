@@ -37,7 +37,7 @@
                                         :key="pumpHouse.id" 
                                         :value="pumpHouse.id.toString()"
                                     >
-                                        {{ pumpHouse.name }} - {{ pumpHouse.location }}
+                                        {{ pumpHouse.name }} - {{ pumpHouse.address }}
                                     </SelectItem>
                                 </SelectContent>
                             </Select>

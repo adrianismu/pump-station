@@ -183,9 +183,9 @@ const getCurrentWaterLevel = (pumpHouse) => {
     return isNaN(level) ? 'N/A' : `${level.toFixed(2)}m`;
   }
   
-  // Fallback to old water_level field
-  if (pumpHouse.water_level) {
-    const level = parseFloat(pumpHouse.water_level.toString().replace(' meter', ''));
+  // Use water_level_history if available
+  if (pumpHouse.water_level_history && pumpHouse.water_level_history.length > 0) {
+    const level = parseFloat(pumpHouse.water_level_history[0].water_level);
     return isNaN(level) ? 'N/A' : `${level.toFixed(2)}m`;
   }
   
@@ -246,8 +246,8 @@ const getCurrentLevelStatus = (pumpHouse) => {
   // Use current_water_level from controller if available
   if (pumpHouse.current_water_level !== null && pumpHouse.current_water_level !== undefined) {
     currentLevel = parseFloat(pumpHouse.current_water_level);
-  } else if (pumpHouse.water_level) {
-    currentLevel = parseFloat(pumpHouse.water_level.toString().replace(' meter', ''));
+  } else if (pumpHouse.water_level_history && pumpHouse.water_level_history.length > 0) {
+    currentLevel = parseFloat(pumpHouse.water_level_history[0].water_level);
   } else {
     return 'N/A';
   }
