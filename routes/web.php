@@ -49,6 +49,9 @@ Route::post('/logout', [LoginController::class, 'logout'])->name('logout');
 
 // Protected routes
 Route::middleware(['auth'])->group(function () {
+    // General dashboard route that redirects based on role
+    Route::get('/dashboard', [DashboardControllerAlias::class, 'index'])->name('dashboard');
+    
     // Admin routes
     Route::middleware(['admin.only'])->group(function () {
         Route::get('/admin/dashboard', [DashboardControllerAlias::class, 'adminDashboard'])->name('admin.dashboard');

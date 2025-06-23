@@ -52,6 +52,14 @@ class RegisteredUserController extends Controller
 
         Auth::login($user);
 
-        return redirect(route('dashboard', absolute: false));
+        // Redirect berdasarkan role
+        if ($user->hasRole('admin')) {
+            return redirect()->route('admin.dashboard');
+        } elseif ($user->hasRole('petugas')) {
+            return redirect()->route('petugas.dashboard');
+        } else {
+            // Untuk masyarakat, redirect ke landing page
+            return redirect()->route('public.landing');
+        }
     }
 }

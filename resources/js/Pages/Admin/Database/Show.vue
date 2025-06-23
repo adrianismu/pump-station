@@ -490,6 +490,15 @@ import {
 } from 'lucide-vue-next'
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
+
+// Fix untuk Leaflet default icons
+delete L.Icon.Default.prototype._getIconUrl
+L.Icon.Default.mergeOptions({
+  iconRetinaUrl: 'https://unpkg.com/leaflet@1.7.1/dist/images/marker-icon-2x.png',
+  iconUrl: 'https://unpkg.com/leaflet@1.7.1/dist/images/marker-icon.png',
+  shadowUrl: 'https://unpkg.com/leaflet@1.7.1/dist/images/marker-shadow.png',
+})
+
 import { getWeatherData, getWeatherDataForPumpHouse, getWeatherDescription, formatRainfall, getRainfallIntensity, getWeatherIcon } from '@/services/weatherService'
 import WaterLevelChart from '@/Components/Charts/WaterLevelChart.vue'
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/Components/ui/dialog'
@@ -719,16 +728,50 @@ watch(selectedTimeFilter, (newValue, oldValue) => {
 
 onMounted(() => {
   // Initialize map
-  const map = L.map("detail-map").setView([pumpHouse.lat, pumpHouse.lng], 15)
+  console.log('Initializing map for pump house:', pumpHouse.name, 'at coordinates:', pumpHouse.lat, pumpHouse.lng);
+  
+  try {
+    // Check if map container exists
+    const mapContainer = document.getElementById("detail-map");
+    if (!mapContainer) {
+      console.error('Map container not found');
+      return;
+    }
+    
+    console.log('Map container found, dimensions:', mapContainer.offsetWidth, 'x', mapContainer.offsetHeight);
+    
+    const map = L.map("detail-map").setView([pumpHouse.lat, pumpHouse.lng], 15)
 
-  L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
-  }).addTo(map)
+    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+    }).addTo(map)
 
-  // Add marker for the pump house
-  L.marker([pumpHouse.lat, pumpHouse.lng])
-    .addTo(map)
-    .bindPopup(`<b>${pumpHouse.name}</b><br>${pumpHouse.status}`)
+    // Add marker for the pump house with explicit icon configuration
+    const marker = L.marker([pumpHouse.lat, pumpHouse.lng], {
+      icon: L.icon({
+        iconUrl: 'https://unpkg.com/leaflet@1.7.1/dist/images/marker-icon.png',
+        iconRetinaUrl: 'https://unpkg.com/leaflet@1.7.1/dist/images/marker-icon-2x.png',
+        shadowUrl: 'https://unpkg.com/leaflet@1.7.1/dist/images/marker-shadow.png',
+        iconSize: [25, 41],
+        iconAnchor: [12, 41],
+        popupAnchor: [1, -34],
+        shadowSize: [41, 41]
+      })
+    })
+      .addTo(map)
+      .bindPopup(`<b>${pumpHouse.name}</b><br>${pumpHouse.status}`)
+
+    console.log('Marker added successfully');
+    
+    // Force map to refresh after a short delay
+    setTimeout(() => {
+      map.invalidateSize();
+      console.log('Map refreshed');
+    }, 100);
+
+  } catch (error) {
+    console.error('Error initializing map:', error);
+  }
 
   // Fetch weather data
   fetchWeatherData()
@@ -932,9 +975,52 @@ const getPumpStatusText = () => {
 }
 </script>
 
-<style>
-/* Ensure the map container has a background */
+<style scoped>
+/* Map container styles */
 #detail-map {
   background-color: #f0f0f0;
+  min-height: 200px;
+  z-index: 1;
+}
+
+/* Ensure map tiles load properly */
+.leaflet-tile-pane {
+  filter: none;
+}
+
+.leaflet-tile {
+  max-width: none !important;
+  max-height: none !important;
+}
+
+/* Leaflet marker styles */
+.leaflet-marker-icon {
+  background-image: url('https://unpkg.com/leaflet@1.7.1/dist/images/marker-icon.png') !important;
+  background-size: 25px 41px !important;
+  background-repeat: no-repeat !important;
+}
+
+.leaflet-marker-shadow {
+  background-image: url('https://unpkg.com/leaflet@1.7.1/dist/images/marker-shadow.png') !important;
+  background-size: 41px 41px !important;
+  background-repeat: no-repeat !important;
+}
+
+/* Leaflet popup styles */
+.leaflet-popup-content-wrapper {
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.leaflet-popup-content {
+  margin: 8px 12px;
+  font-family: inherit;
+  line-height: 1.4;
+}
+
+.leaflet-popup-tip {
+  background: white;
+  border: none;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 </style> 

@@ -136,8 +136,7 @@
     height: 8px;
   }
   
-  *::-webki
-t-scrollbar-track {
+  *::-webkit-scrollbar-track {
     background: hsl(var(--background));
     border-radius: 4px;
   }
@@ -226,4 +225,22 @@ t-scrollbar-track {
   .custom-scrollbar::-webkit-scrollbar-thumb:hover {
     background: hsl(var(--muted-foreground));
   }
+}
+
+/* Leaflet Icon Fix - Memastikan icon default selalu tersedia */
+.leaflet-default-icon-path {
+  background-image: url('https://unpkg.com/leaflet@1.7.1/dist/images/marker-icon.png');
+}
+
+.leaflet-default-icon-shadow {
+  background-image: url('https://unpkg.com/leaflet@1.7.1/dist/images/marker-shadow.png');
+}
+
+/* Fallback untuk icon yang tidak ter-load */
+.leaflet-marker-icon {
+  background-image: url('https://unpkg.com/leaflet@1.7.1/dist/images/marker-icon.png') !important;
+}
+
+.leaflet-marker-shadow {
+  background-image: url('https://unpkg.com/leaflet@1.7.1/dist/images/marker-shadow.png') !important;
 }

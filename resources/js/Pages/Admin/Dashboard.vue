@@ -19,8 +19,8 @@
             <div>
               <h2 class="text-3xl font-bold">{{ dashboardData.totalPumpHouses }}</h2>
               <p class="text-xs text-muted-foreground flex items-center mt-2">
-                <TrendingUp class="w-4 h-4 text-success mr-1" />
-                Bertambah 2 dalam 3 bulan terakhir
+                <CheckCircle class="w-4 h-4 text-success mr-1" />
+                {{ dashboardData.activePumpHouses }} sedang aktif
               </p>
             </div>
             <div class="bg-primary/10 p-2 rounded-full">

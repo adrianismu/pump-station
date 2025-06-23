@@ -7,6 +7,17 @@ import { createInertiaApp } from '@inertiajs/vue3';
 import { resolvePageComponent } from 'laravel-vite-plugin/inertia-helpers';
 import { ZiggyVue } from '../../vendor/tightenco/ziggy';
 
+// Global Leaflet Icon Fix
+if (typeof window !== 'undefined' && window.L) {
+    // Fix untuk Leaflet default icons
+    delete window.L.Icon.Default.prototype._getIconUrl;
+    window.L.Icon.Default.mergeOptions({
+        iconRetinaUrl: 'https://unpkg.com/leaflet@1.7.1/dist/images/marker-icon-2x.png',
+        iconUrl: 'https://unpkg.com/leaflet@1.7.1/dist/images/marker-icon.png',
+        shadowUrl: 'https://unpkg.com/leaflet@1.7.1/dist/images/marker-shadow.png',
+    });
+}
+
 const appName = import.meta.env.VITE_APP_NAME || 'Sistem Monitoring Rumah Pompa';
 
 createInertiaApp({
