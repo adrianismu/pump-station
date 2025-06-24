@@ -32,11 +32,13 @@ class NotificationsController extends Controller
                     'title' => $alert->title,
                     'description' => $alert->description,
                     'severity' => $alert->severity,
-                    'timestamp' => $alert->created_at->format('d M Y, H:i'),
+                    'created_at' => $alert->created_at,
+                    'updated_at' => $alert->updated_at,
+                    'timestamp' => $alert->created_at, // Raw timestamp untuk frontend processing
                     'location' => $alert->pump_house->name,
-                    'waterLevel' => $alert->water_level . ' cm',
-                    'pumpStatus' => $alert->pump_status,
-                    'rainfall' => $alert->rainfall . ' mm',
+                    'waterLevel' => $alert->water_level ? $alert->water_level . ' cm' : 'N/A',
+                    'pumpStatus' => $alert->pump_status ?: 'N/A',
+                    'rainfall' => $alert->rainfall ? $alert->rainfall . ' mm' : 'N/A',
                     'pump_house' => [
                         'id' => $alert->pump_house->id,
                         'name' => $alert->pump_house->name
@@ -66,7 +68,7 @@ class NotificationsController extends Controller
         $validated = $request->validate([
             'title' => 'required|string|max:255',
             'pump_house_id' => 'required|exists:pump_houses,id',
-            'severity' => 'required|in:Informasi,Peringatan,Kritis',
+            'severity' => 'required|in:low,medium,high,critical',
             'description' => 'required|string',
             'recipients' => 'nullable|array',
         ]);
@@ -236,7 +238,7 @@ class NotificationsController extends Controller
     public function update(Request $request, Alert $alert)
     {
         $validated = $request->validate([
-            'severity' => 'required|in:Informasi,Peringatan,Kritis',
+            'severity' => 'required|in:low,medium,high,critical',
             'status' => 'required|string',
         ]);
         
@@ -267,15 +269,18 @@ class NotificationsController extends Controller
             // Get notifications from last 24 hours only
             $notifications = $notificationService->getActiveNotifications($user->id);
             
-            // Filter by severity if needed - only count critical and high severity
-            $criticalNotifications = array_filter($notifications, function($notification) {
-                return in_array($notification['severity'], ['critical', 'high']);
+            // Filter by severity - count important notifications (medium, high, critical)
+            $importantNotifications = array_filter($notifications, function($notification) {
+                return in_array($notification['severity'], ['medium', 'high', 'critical']);
             });
             
             return response()->json([
-                'unread_count' => count($criticalNotifications),
+                'unread_count' => count($importantNotifications),
                 'total_notifications' => count($notifications),
-                'debug' => 'Time-filtered notifications (24h)',
+                'critical_count' => count(array_filter($notifications, fn($n) => $n['severity'] === 'critical')),
+                'high_count' => count(array_filter($notifications, fn($n) => $n['severity'] === 'high')),
+                'medium_count' => count(array_filter($notifications, fn($n) => $n['severity'] === 'medium')),
+                'debug' => 'Important notifications (medium + high + critical)',
                 'timestamp' => now()->toISOString()
             ]);
         } catch (\Exception $e) {

@@ -75,7 +75,7 @@ class WaterLevelController extends Controller
         ]);
     }
 
-    public function create()
+    public function create(Request $request)
     {
         $user = auth()->user();
         
@@ -88,9 +88,21 @@ class WaterLevelController extends Controller
         }
         
         $pumpHouses = $pumpHousesQuery->get();
+        
+        // Get selected pump house from query parameter
+        $selectedPumpHouseId = $request->get('pump_house_id');
+        $selectedPumpHouse = null;
+        
+        if ($selectedPumpHouseId) {
+            // Validate that user has access to this pump house
+            if ($user->isAdmin() || $user->canWriteToPumpHouse($selectedPumpHouseId)) {
+                $selectedPumpHouse = PumpHouse::find($selectedPumpHouseId);
+            }
+        }
 
         return Inertia::render('Admin/WaterLevel/Create', [
             'pumpHouses' => $pumpHouses,
+            'selectedPumpHouse' => $selectedPumpHouse,
         ]);
     }
 
@@ -128,6 +140,13 @@ class WaterLevelController extends Controller
             $this->checkAndCreateAlert($pumpHouse, $request->water_level);
         }
 
+        // Redirect back to history page if coming from history
+        $redirectBack = $request->get('redirect_back');
+        if ($redirectBack === 'history') {
+            return redirect()->route('admin.water-level.history', $request->pump_house_id)
+                ->with('success', 'Data ketinggian air berhasil disimpan');
+        }
+        
         return redirect()->route('admin.water-level.index')
             ->with('success', 'Data ketinggian air berhasil disimpan');
     }

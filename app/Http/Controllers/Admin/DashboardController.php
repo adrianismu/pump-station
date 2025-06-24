@@ -120,7 +120,15 @@ class DashboardController extends Controller
             }
             
             $status = $this->getWaterLevelStatus($pumpHouse->id, $waterLevel);
-            $stats[$status['level']]++;
+            $levelKey = strtolower($status['level']);
+            
+            // Handle different possible threshold names
+            if (isset($stats[$levelKey])) {
+                $stats[$levelKey]++;
+            } else {
+                // Default to normal if unknown level
+                $stats['normal']++;
+            }
         }
         
         return $stats;

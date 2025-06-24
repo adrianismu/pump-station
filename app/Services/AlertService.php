@@ -4,6 +4,8 @@ namespace App\Services;
 
 use App\Models\Alert;
 use App\Models\PumpHouse;
+use App\Models\ThresholdSetting;
+use App\Models\PumpHouseThresholdSetting;
 use App\Services\NotificationService;
 
 
@@ -28,7 +30,7 @@ class AlertService
         $alert = Alert::create([
             'type' => 'water_level',
             'pump_house_id' => $pumpHouse->id,
-            'title' => "Status {$severity} - {$pumpHouse->name}",
+            'title' => "Status {$this->getSeverityLabel($severity)} - {$pumpHouse->name}",
             'description' => "Level air mencapai {$waterLevel}m",
             'severity' => $severity,
             'internal_message' => $internalMessage,
@@ -87,22 +89,23 @@ class AlertService
      */
     private function determineSeverity(PumpHouse $pumpHouse, float $waterLevel): string
     {
-        // Get threshold settings for this pump house
-        $thresholds = $pumpHouse->threshold_settings()->first();
-        
+        // Get pump house specific thresholds first
+        $thresholds = PumpHouseThresholdSetting::where('pump_house_id', $pumpHouse->id)
+            ->where('is_active', true)
+            ->where('water_level', '<=', $waterLevel)
+            ->orderBy('water_level', 'desc')
+            ->first();
+
+        // Fallback to global thresholds if no pump house specific threshold exists
         if (!$thresholds) {
-            return 'Siaga'; // Default to Siaga if no thresholds set
+            $thresholds = ThresholdSetting::where('is_active', true)
+                ->where('water_level', '<=', $waterLevel)
+                ->orderBy('water_level', 'desc')
+                ->first();
         }
 
-        if ($waterLevel >= $thresholds->danger_level) {
-            return 'Awas';
-        }
-
-        if ($waterLevel >= $thresholds->warning_level) {
-            return 'Siaga';
-        }
-
-        return 'Siaga';
+        // Return the severity from threshold setting, default to 'low' if no threshold matches
+        return $thresholds ? $thresholds->severity : 'low';
     }
 
     /**
@@ -114,12 +117,36 @@ class AlertService
         $precipitationProb = $weatherData['precipitation_probability'] ?? 0;
         $windSpeed = $weatherData['wind_speed'] ?? 0;
 
-        // Awas conditions: Very high risk
+        // Critical conditions: Very high risk
         if ($precipitation > 10.0 || $precipitationProb > 90 || ($windSpeed > 25 && $precipitation > 3.0)) {
-            return 'Awas';
+            return 'critical';
         }
 
-        return 'Siaga';
+        // High conditions: High risk
+        if ($precipitation > 5.0 || $precipitationProb > 70 || ($windSpeed > 15 && $precipitation > 2.0)) {
+            return 'high';
+        }
+
+        // Medium conditions: Moderate risk
+        if ($precipitation > 2.0 || $precipitationProb > 50) {
+            return 'medium';
+        }
+
+        return 'low';
+    }
+
+    /**
+     * Get severity label for display
+     */
+    private function getSeverityLabel(string $severity): string
+    {
+        return match($severity) {
+            'critical' => 'Kritis',
+            'high' => 'Tinggi',
+            'medium' => 'Sedang',
+            'low' => 'Rendah',
+            default => 'Normal'
+        };
     }
 
     /**
@@ -127,7 +154,9 @@ class AlertService
      */
     private function generateWaterLevelInternalMessage(PumpHouse $pumpHouse, float $waterLevel, string $severity): string
     {
-        return "Status {$severity} di {$pumpHouse->name}. Level air {$waterLevel}m. " .
+        $severityLabel = $this->getSeverityLabel($severity);
+        
+        return "Status {$severityLabel} di {$pumpHouse->name}. Level air {$waterLevel}m. " .
             "Lokasi: {$pumpHouse->address}. " .
             "Segera lakukan pengecekan dan tindakan sesuai SOP.";
     }
@@ -137,13 +166,14 @@ class AlertService
      */
     private function generateWaterLevelPublicMessage(PumpHouse $pumpHouse, float $waterLevel, string $severity): ?string
     {
-        // Only generate public message for 'Awas' severity
-        if ($severity !== 'Awas') {
+        // Only generate public message for 'critical' and 'high' severity
+        if (!in_array($severity, ['critical', 'high'])) {
             return null;
         }
 
-        return "Peringatan Banjir: Terdeteksi kenaikan muka air signifikan di sekitar {$pumpHouse->address}. " .
-            "Warga diimbau untuk waspada dan siaga banjir.";
+        $severityLabel = $this->getSeverityLabel($severity);
+        return "Peringatan Banjir - Status {$severityLabel}: Terdeteksi kenaikan muka air signifikan di sekitar {$pumpHouse->address}. " .
+            "Warga diimbau untuk tetap waspada.";
     }
 
     /**
@@ -165,14 +195,15 @@ class AlertService
      */
     private function generateWeatherPublicMessage(PumpHouse $pumpHouse, array $weatherData, string $severity): ?string
     {
-        // Only generate public message for 'Awas' severity
-        if ($severity !== 'Awas') {
+        // Only generate public message for 'critical' and 'high' severity
+        if (!in_array($severity, ['critical', 'high'])) {
             return null;
         }
 
         $description = $weatherData['description'] ?? 'cuaca buruk';
 
-        return "Info Cuaca: Waspada potensi {$description} dengan intensitas tinggi di wilayah {$pumpHouse->address}. " .
-            "Masyarakat diimbau tetap waspada dan siaga banjir.";
+        $severityLabel = $this->getSeverityLabel($severity);
+        return "Info Cuaca - Status {$severityLabel}: Waspada potensi {$description} dengan intensitas tinggi di wilayah {$pumpHouse->address}. " .
+            "Masyarakat diimbau tetap waspada.";
     }
 } 

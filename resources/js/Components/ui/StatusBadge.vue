@@ -86,9 +86,18 @@ const getReportStatusInfo = (status) => {
 
 const getNotificationSeverityInfo = (severity) => {
   const severityMap = {
+    // Mapping berdasarkan threshold settings di database
+    'low': { text: 'Normal', variant: 'default' },        // severity: low → label: Normal
+    'medium': { text: 'Peringatan', variant: 'secondary' }, // severity: medium → label: Peringatan  
+    'high': { text: 'Kritis', variant: 'destructive' },     // severity: high → label: Kritis
+    'critical': { text: 'Darurat', variant: 'destructive' }, // severity: critical → label: Darurat
+    
+    // Legacy support untuk nilai yang sudah dalam bahasa Indonesia
     'Kritis': { text: 'Kritis', variant: 'destructive' },
     'Peringatan': { text: 'Peringatan', variant: 'secondary' },
-    'Informasi': { text: 'Informasi', variant: 'default' }
+    'Informasi': { text: 'Informasi', variant: 'default' },
+    'Normal': { text: 'Normal', variant: 'default' },
+    'Darurat': { text: 'Darurat', variant: 'destructive' }
   }
   return severityMap[severity] || { text: severity, variant: 'default' }
 }

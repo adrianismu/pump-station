@@ -8,13 +8,25 @@
                 <CardHeader>
                     <div class="flex items-center gap-4">
                         <Button variant="ghost" size="sm" as-child>
-                            <Link :href="route('admin.water-level.index')">
+                            <Link :href="getCancelRoute()">
                                 <ArrowLeft class="w-4 h-4" />
                             </Link>
                         </Button>
                         <div>
-                            <CardTitle class="text-2xl">Tambah Data Ketinggian Air</CardTitle>
-                            <CardDescription>Input data ketinggian air rumah pompa</CardDescription>
+                            <CardTitle class="text-2xl">
+                                Tambah Data Ketinggian Air
+                                <span v-if="selectedPumpHouse" class="text-lg font-normal text-muted-foreground">
+                                    - {{ selectedPumpHouse.name }}
+                                </span>
+                            </CardTitle>
+                            <CardDescription>
+                                <span v-if="selectedPumpHouse">
+                                    Input data ketinggian air untuk {{ selectedPumpHouse.name }}
+                                </span>
+                                <span v-else>
+                                    Input data ketinggian air rumah pompa
+                                </span>
+                            </CardDescription>
                         </div>
                     </div>
                 </CardHeader>
@@ -27,7 +39,24 @@
                         <!-- Pump House Selection -->
                         <div class="space-y-2">
                             <Label for="pump_house_id">Rumah Pompa *</Label>
-                            <Select v-model="form.pump_house_id" required>
+                            <!-- If coming from history page, show selected pump house info -->
+                            <div v-if="selectedPumpHouse" class="p-3 bg-muted rounded-md">
+                                <div class="flex items-center justify-between">
+                                    <div>
+                                        <div class="font-medium">{{ selectedPumpHouse.name }}</div>
+                                        <div class="text-sm text-muted-foreground">{{ selectedPumpHouse.address }}</div>
+                                    </div>
+                                    <Button 
+                                        variant="outline" 
+                                        size="sm"
+                                        @click="clearSelectedPumpHouse"
+                                    >
+                                        Ganti
+                                    </Button>
+                                </div>
+                            </div>
+                            <!-- Normal dropdown when no pump house selected -->
+                            <Select v-if="!selectedPumpHouse" v-model="form.pump_house_id" required>
                                 <SelectTrigger>
                                     <SelectValue placeholder="Pilih Rumah Pompa" />
                                 </SelectTrigger>
@@ -117,7 +146,7 @@
                         <!-- Submit Buttons -->
                         <div class="flex justify-end gap-4 pt-6 border-t">
                             <Button variant="outline" as-child>
-                                <Link :href="route('admin.water-level.index')">
+                                <Link :href="getCancelRoute()">
                                     Batal
                                 </Link>
                             </Button>
@@ -136,6 +165,7 @@
 
 <script setup>
 import { Head, Link, useForm } from '@inertiajs/vue3'
+import { ref, watch } from 'vue'
 import AdminLayout from '@/Layouts/AdminLayout.vue'
 import { ArrowLeft, AlertTriangle, Save, Loader2 } from 'lucide-vue-next'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/Components/ui/card'
@@ -147,18 +177,44 @@ import { Alert, AlertDescription, AlertTitle } from '@/Components/ui/alert'
 
 const props = defineProps({
     pumpHouses: Array,
+    selectedPumpHouse: Object,
     errors: Object,
 })
 
+// Reactive state for selected pump house
+const selectedPumpHouse = ref(props.selectedPumpHouse)
+
 const form = useForm({
-    pump_house_id: '',
+    pump_house_id: selectedPumpHouse.value ? selectedPumpHouse.value.id.toString() : '',
     water_level: '',
     recorded_at: '',
+    redirect_back: selectedPumpHouse.value ? 'history' : '',
 })
 
 const submit = () => {
     form.post(route('admin.water-level.store'))
 }
+
+const clearSelectedPumpHouse = () => {
+    selectedPumpHouse.value = null
+    form.pump_house_id = ''
+    form.redirect_back = ''
+}
+
+const getCancelRoute = () => {
+    if (selectedPumpHouse.value && selectedPumpHouse.value.id) {
+        return route('admin.water-level.history', selectedPumpHouse.value.id)
+    }
+    return route('admin.water-level.index')
+}
+
+// Watch for changes in selectedPumpHouse to update form
+watch(selectedPumpHouse, (newValue) => {
+    if (newValue && newValue.id) {
+        form.pump_house_id = newValue.id.toString()
+        form.redirect_back = 'history'
+    }
+}, { immediate: true })
 
 const getStatusText = (level) => {
     const numLevel = parseFloat(level)

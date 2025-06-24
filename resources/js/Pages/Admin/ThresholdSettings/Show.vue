@@ -2,93 +2,204 @@
     <AdminLayout>
         <Head title="Detail Pengaturan Threshold" />
         
-        <div class="py-12">
-            <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
-                <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
-                    <div class="p-6 text-gray-900">
-                        <div class="flex justify-between items-center mb-6">
-                            <h2 class="text-2xl font-semibold">Detail Pengaturan Threshold</h2>
-                            <div class="space-x-2">
-                                <Link :href="route('admin.threshold-settings.edit', threshold.id)" 
-                                      class="bg-yellow-500 hover:bg-yellow-700 text-white font-bold py-2 px-4 rounded">
-                                    Edit
+        <div class="container mx-auto p-6 space-y-6">
+            <!-- Header -->
+            <Card>
+                <CardHeader>
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center gap-4">
+                            <Button variant="ghost" size="sm" as-child>
+                                <Link :href="route('admin.threshold-settings.index')">
+                                    <ArrowLeft class="w-4 h-4" />
                                 </Link>
-                                <Link :href="route('admin.threshold-settings.index')" 
-                                      class="bg-gray-500 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded">
-                                    Kembali
-                                </Link>
+                            </Button>
+                            <div>
+                                <CardTitle class="text-2xl">Detail Pengaturan Threshold</CardTitle>
+                                <CardDescription>
+                                    Informasi lengkap threshold "{{ threshold.label }}"
+                                </CardDescription>
                             </div>
                         </div>
+                        <Button as-child>
+                            <Link :href="route('admin.threshold-settings.edit', threshold.id)">
+                                <Edit class="w-4 h-4 mr-2" />
+                                Edit Threshold
+                            </Link>
+                        </Button>
+                    </div>
+                </CardHeader>
+            </Card>
 
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            <div class="space-y-4">
-                                <div>
-                                    <label class="block text-sm font-medium text-gray-700">Nama</label>
-                                    <p class="mt-1 text-sm text-gray-900">{{ threshold.name }}</p>
+            <!-- Threshold Preview -->
+            <Card>
+                <CardHeader>
+                    <CardTitle class="text-lg">Preview Threshold</CardTitle>
+                </CardHeader>
+                <CardContent>
+                    <div class="p-4 border rounded-lg bg-muted/50">
+                        <div class="flex items-center gap-3">
+                            <div 
+                                :style="{ backgroundColor: threshold.color }"
+                                class="w-5 h-5 rounded-full border"
+                            ></div>
+                            <div>
+                                <div class="font-medium text-lg">{{ threshold.label }}</div>
+                                <div class="text-sm text-muted-foreground">
+                                    Ketinggian air ≥ {{ threshold.water_level }} meter
                                 </div>
-
-                                <div>
-                                    <label class="block text-sm font-medium text-gray-700">Label</label>
-                                    <p class="mt-1 text-sm text-gray-900">{{ threshold.label }}</p>
-                                </div>
-
-                                <div>
-                                    <label class="block text-sm font-medium text-gray-700">Ketinggian Air</label>
-                                    <p class="mt-1 text-sm text-gray-900">{{ threshold.water_level }} meter</p>
-                                </div>
-
-                                <div>
-                                    <label class="block text-sm font-medium text-gray-700">Warna</label>
-                                    <div class="mt-1 flex items-center space-x-2">
-                                        <div 
-                                            class="w-6 h-6 rounded border border-gray-300"
-                                            :style="{ backgroundColor: threshold.color }"
-                                        ></div>
-                                        <span class="text-sm text-gray-900">{{ threshold.color }}</span>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div class="space-y-4">
-                                <div>
-                                    <label class="block text-sm font-medium text-gray-700">Tingkat Keparahan</label>
-                                    <span 
-                                        class="mt-1 inline-flex px-2 py-1 text-xs font-semibold rounded-full"
-                                        :class="getSeverityClass(threshold.severity)"
-                                    >
-                                        {{ getSeverityLabel(threshold.severity) }}
-                                    </span>
-                                </div>
-
-                                <div>
-                                    <label class="block text-sm font-medium text-gray-700">Status</label>
-                                    <span 
-                                        class="mt-1 inline-flex px-2 py-1 text-xs font-semibold rounded-full"
-                                        :class="threshold.is_active ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'"
-                                    >
-                                        {{ threshold.is_active ? 'Aktif' : 'Tidak Aktif' }}
-                                    </span>
-                                </div>
-
-                                <div>
-                                    <label class="block text-sm font-medium text-gray-700">Dibuat</label>
-                                    <p class="mt-1 text-sm text-gray-900">{{ formatDate(threshold.created_at) }}</p>
-                                </div>
-
-                                <div>
-                                    <label class="block text-sm font-medium text-gray-700">Diperbarui</label>
-                                    <p class="mt-1 text-sm text-gray-900">{{ formatDate(threshold.updated_at) }}</p>
+                                <div v-if="threshold.description" class="text-xs text-muted-foreground mt-1">
+                                    {{ threshold.description }}
                                 </div>
                             </div>
-                        </div>
-
-                        <div v-if="threshold.description" class="mt-6">
-                            <label class="block text-sm font-medium text-gray-700">Deskripsi</label>
-                            <p class="mt-1 text-sm text-gray-900">{{ threshold.description }}</p>
                         </div>
                     </div>
-                </div>
+                </CardContent>
+            </Card>
+
+            <!-- Details -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <!-- Basic Information -->
+                <Card>
+                    <CardHeader>
+                        <CardTitle class="text-lg">Informasi Dasar</CardTitle>
+                    </CardHeader>
+                    <CardContent class="space-y-4">
+                        <div class="space-y-2">
+                            <Label class="text-sm font-medium">Nama Internal</Label>
+                            <div class="p-2 bg-muted rounded-md">
+                                <code class="text-sm">{{ threshold.name }}</code>
+                            </div>
+                        </div>
+
+                        <div class="space-y-2">
+                            <Label class="text-sm font-medium">Label Display</Label>
+                            <p class="text-sm text-muted-foreground">{{ threshold.label }}</p>
+                        </div>
+
+                        <div class="space-y-2">
+                            <Label class="text-sm font-medium">Ketinggian Air</Label>
+                            <div class="flex items-center gap-2">
+                                <span class="text-2xl font-bold">{{ threshold.water_level }}</span>
+                                <span class="text-sm text-muted-foreground">meter</span>
+                            </div>
+                        </div>
+
+                        <div class="space-y-2">
+                            <Label class="text-sm font-medium">Warna Indikator</Label>
+                            <div class="flex items-center gap-3">
+                                <div 
+                                    class="w-8 h-8 rounded-md border border-border"
+                                    :style="{ backgroundColor: threshold.color }"
+                                ></div>
+                                <div>
+                                    <div class="text-sm font-medium">{{ threshold.color }}</div>
+                                    <div class="text-xs text-muted-foreground">Hex Color Code</div>
+                                </div>
+                            </div>
+                        </div>
+                    </CardContent>
+                </Card>
+
+                <!-- Status & Metadata -->
+                <Card>
+                    <CardHeader>
+                        <CardTitle class="text-lg">Status & Metadata</CardTitle>
+                    </CardHeader>
+                    <CardContent class="space-y-4">
+                        <div class="space-y-2">
+                            <Label class="text-sm font-medium">Tingkat Keparahan</Label>
+                            <div class="flex items-center gap-2">
+                                <div 
+                                    class="w-3 h-3 rounded-full"
+                                    :class="getSeverityColor(threshold.severity)"
+                                ></div>
+                                <Badge :variant="getSeverityVariant(threshold.severity)">
+                                    {{ getSeverityLabel(threshold.severity) }}
+                                </Badge>
+                            </div>
+                        </div>
+
+                        <div class="space-y-2">
+                            <Label class="text-sm font-medium">Status Aktif</Label>
+                            <div class="flex items-center gap-2">
+                                <div 
+                                    class="w-3 h-3 rounded-full"
+                                    :class="threshold.is_active ? 'bg-green-500' : 'bg-red-500'"
+                                ></div>
+                                <Badge :variant="threshold.is_active ? 'default' : 'destructive'">
+                                    {{ threshold.is_active ? 'Aktif' : 'Tidak Aktif' }}
+                                </Badge>
+                            </div>
+                        </div>
+
+                        <Separator />
+
+                        <div class="space-y-2">
+                            <Label class="text-sm font-medium">Dibuat</Label>
+                            <div class="flex items-center gap-2">
+                                <Calendar class="w-4 h-4 text-muted-foreground" />
+                                <p class="text-sm text-muted-foreground">{{ formatDate(threshold.created_at) }}</p>
+                            </div>
+                        </div>
+
+                        <div class="space-y-2">
+                            <Label class="text-sm font-medium">Terakhir Diperbarui</Label>
+                            <div class="flex items-center gap-2">
+                                <Clock class="w-4 h-4 text-muted-foreground" />
+                                <p class="text-sm text-muted-foreground">{{ formatDate(threshold.updated_at) }}</p>
+                            </div>
+                        </div>
+                    </CardContent>
+                </Card>
             </div>
+
+            <!-- Description -->
+            <Card v-if="threshold.description">
+                <CardHeader>
+                    <CardTitle class="text-lg">Deskripsi</CardTitle>
+                </CardHeader>
+                <CardContent>
+                    <p class="text-sm leading-relaxed">{{ threshold.description }}</p>
+                </CardContent>
+            </Card>
+
+            <!-- Usage Information -->
+            <Card>
+                <CardHeader>
+                    <CardTitle class="text-lg">Informasi Penggunaan</CardTitle>
+                </CardHeader>
+                <CardContent>
+                    <div class="space-y-3">
+                        <div class="flex items-start gap-3">
+                            <AlertTriangle class="w-5 h-5 text-amber-500 mt-0.5" />
+                            <div>
+                                <p class="text-sm font-medium">Sistem Monitoring</p>
+                                <p class="text-xs text-muted-foreground">
+                                    Threshold ini digunakan untuk menentukan status ketinggian air dalam sistem monitoring otomatis.
+                                </p>
+                            </div>
+                        </div>
+                        <div class="flex items-start gap-3">
+                            <Bell class="w-5 h-5 text-blue-500 mt-0.5" />
+                            <div>
+                                <p class="text-sm font-medium">Notifikasi Alert</p>
+                                <p class="text-xs text-muted-foreground">
+                                    Ketika ketinggian air mencapai {{ threshold.water_level }}m atau lebih, sistem akan mengirim notifikasi dengan prioritas {{ getSeverityLabel(threshold.severity).toLowerCase() }}.
+                                </p>
+                            </div>
+                        </div>
+                        <div class="flex items-start gap-3">
+                            <Palette class="w-5 h-5 text-purple-500 mt-0.5" />
+                            <div>
+                                <p class="text-sm font-medium">Indikator Visual</p>
+                                <p class="text-xs text-muted-foreground">
+                                    Warna {{ threshold.color }} akan digunakan untuk menampilkan status ini di dashboard dan peta.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </CardContent>
+            </Card>
         </div>
     </AdminLayout>
 </template>
@@ -96,19 +207,35 @@
 <script setup>
 import { Head, Link } from '@inertiajs/vue3'
 import AdminLayout from '@/Layouts/AdminLayout.vue'
+import { ArrowLeft, Edit, Calendar, Clock, AlertTriangle, Bell, Palette } from 'lucide-vue-next'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/Components/ui/card'
+import { Button } from '@/Components/ui/button'
+import { Label } from '@/Components/ui/label'
+import { Badge } from '@/Components/ui/badge'
+import { Separator } from '@/Components/ui/separator'
 
 defineProps({
     threshold: Object,
 })
 
-const getSeverityClass = (severity) => {
-    const classes = {
-        low: 'bg-green-100 text-green-800',
-        medium: 'bg-yellow-100 text-yellow-800',
-        high: 'bg-orange-100 text-orange-800',
-        critical: 'bg-red-100 text-red-800',
+const getSeverityColor = (severity) => {
+    const colors = {
+        low: 'bg-green-500',
+        medium: 'bg-yellow-500',
+        high: 'bg-orange-500',
+        critical: 'bg-red-500',
     }
-    return classes[severity] || 'bg-gray-100 text-gray-800'
+    return colors[severity] || 'bg-gray-500'
+}
+
+const getSeverityVariant = (severity) => {
+    const variants = {
+        low: 'default',
+        medium: 'secondary',
+        high: 'destructive',
+        critical: 'destructive',
+    }
+    return variants[severity] || 'secondary'
 }
 
 const getSeverityLabel = (severity) => {

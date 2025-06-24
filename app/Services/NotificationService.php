@@ -99,7 +99,7 @@ class NotificationService
     }
 
     /**
-     * Get active notifications based on current water levels and alerts
+     * Get active notifications based on alerts only (no duplicate threshold checking)
      */
     public function getActiveNotifications($userId = null)
     {
@@ -113,7 +113,7 @@ class NotificationService
             $notifications[] = [
                 'id' => 'alert_' . $alert['id'],
                 'type' => $alert['type'],
-                'severity' => $this->mapSeverityToLegacy($alert['severity']),
+                'severity' => $alert['severity'], // Use consistent severity system
                 'title' => $alert['title'],
                 'message' => $alert['description'],
                 'description' => $alert['internal_message'],
@@ -126,27 +126,8 @@ class NotificationService
             ];
         }
         
-        // Also get threshold-based notifications for real-time monitoring
-        $thresholdNotifications = $this->getThresholdNotifications($userId);
-        
-        // Merge and deduplicate notifications
-        $allNotifications = array_merge($notifications, $thresholdNotifications);
-        
-        // Remove duplicates based on pump house and keep most recent
-        $uniqueNotifications = [];
-        $processedPumpHouses = [];
-        
-        foreach ($allNotifications as $notification) {
-            $pumpHouseName = $notification['pump_house'] ?? 'unknown';
-            
-            if (!in_array($pumpHouseName, $processedPumpHouses)) {
-                $uniqueNotifications[] = $notification;
-                $processedPumpHouses[] = $pumpHouseName;
-            }
-        }
-        
         // Sort by severity and time
-        usort($uniqueNotifications, function($a, $b) {
+        usort($notifications, function($a, $b) {
             $severityOrder = ['critical' => 4, 'high' => 3, 'medium' => 2, 'low' => 1];
             $severityA = $severityOrder[$a['severity']] ?? 0;
             $severityB = $severityOrder[$b['severity']] ?? 0;
@@ -158,88 +139,10 @@ class NotificationService
             return $severityB - $severityA;
         });
         
-        return $uniqueNotifications;
-    }
-
-    /**
-     * Get legacy threshold notifications (backward compatibility)
-     */
-    public function getThresholdNotifications($userId = null)
-    {
-        $notifications = [];
-        
-        // Get latest water level for each pump house
-        $pumpHousesQuery = PumpHouse::with(['waterLevelHistory' => function($query) {
-            $query->latest('recorded_at')->limit(1);
-        }]);
-        
-        // Filter berdasarkan akses user jika bukan admin
-        if ($userId) {
-            $user = User::find($userId);
-            if ($user && !$user->isAdmin()) {
-                $accessibleIds = $user->getAccessiblePumpHouseIds();
-                $pumpHousesQuery->whereIn('id', $accessibleIds);
-            }
-        }
-        
-        $pumpHouses = $pumpHousesQuery->get();
-
-        foreach ($pumpHouses as $pumpHouse) {
-            if ($pumpHouse->waterLevelHistory->isNotEmpty()) {
-                $latestRecord = $pumpHouse->waterLevelHistory->first();
-                $waterLevel = (float) $latestRecord->water_level;
-                
-                // Get exceeded threshold for this pump house
-                $threshold = PumpHouseThresholdSetting::getExceededThresholdForPumpHouse($pumpHouse->id, $waterLevel);
-                
-                // Fallback to global threshold if no pump house specific threshold exists
-                if (!$threshold) {
-                    $threshold = ThresholdSetting::getExceededThreshold($waterLevel);
-                }
-                
-                if ($threshold && $threshold->name !== 'normal') {
-                    $notifications[] = [
-                        'id' => 'threshold_' . $pumpHouse->id . '_' . $threshold->name,
-                        'type' => 'threshold_exceeded',
-                        'severity' => $threshold->severity,
-                        'title' => $threshold->label . ' - ' . $pumpHouse->name,
-                        'message' => "Ketinggian air mencapai {$waterLevel}m di {$pumpHouse->name}",
-                        'description' => $threshold->description,
-                        'color' => $threshold->color,
-                        'pump_house' => $pumpHouse->name,
-                        'location' => $pumpHouse->location,
-                        'water_level' => $waterLevel,
-                        'threshold_level' => $threshold->water_level,
-                        'threshold_name' => $threshold->name,
-                        'recorded_at' => $latestRecord->recorded_at,
-                        'time_ago' => $latestRecord->recorded_at->diffForHumans(),
-                        'actions' => [
-                            [
-                                'label' => 'Lihat Detail',
-                                'route' => 'admin.water-level.show',
-                                'params' => $latestRecord->id,
-                                'type' => 'primary'
-                            ],
-                            [
-                                'label' => 'Riwayat',
-                                'route' => 'admin.water-level.history',
-                                'params' => $pumpHouse->id,
-                                'type' => 'secondary'
-                            ]
-                        ]
-                    ];
-                }
-            }
-        }
-
-        // Sort by severity (critical first)
-        usort($notifications, function($a, $b) {
-            $severityOrder = ['critical' => 4, 'high' => 3, 'medium' => 2, 'low' => 1];
-            return ($severityOrder[$b['severity']] ?? 0) - ($severityOrder[$a['severity']] ?? 0);
-        });
-
         return $notifications;
     }
+
+
 
     /**
      * Get contextualized alerts for user based on role and access
@@ -348,12 +251,12 @@ class NotificationService
     }
 
     /**
-     * Check if there are any critical notifications
+     * Check if there are any important notifications
      */
     public function hasCriticalNotifications($userId = null)
     {
         $counts = $this->getNotificationCounts($userId);
-        return $counts['critical'] > 0 || $counts['high'] > 0;
+        return $counts['critical'] > 0 || $counts['high'] > 0 || $counts['medium'] > 0;
     }
 
     /**
@@ -396,27 +299,33 @@ class NotificationService
         return $breaches;
     }
 
+
+
     /**
-     * Map new severity levels to legacy severity levels
+     * Get severity color for display
      */
-    private function mapSeverityToLegacy($severity): string
+    public function getSeverityColor(string $severity): string
     {
         return match($severity) {
-            'Awas' => 'critical',
-            'Siaga' => 'high',
-            default => 'medium'
+            'critical' => '#dc2626', // red-600
+            'high' => '#ea580c',      // orange-600  
+            'medium' => '#d97706',    // amber-600
+            'low' => '#059669',       // emerald-600
+            default => '#0ea5e9'      // sky-500
         };
     }
 
     /**
-     * Get color for severity level
+     * Get severity label for display
      */
-    private function getSeverityColor($severity): string
+    public function getSeverityLabel(string $severity): string
     {
         return match($severity) {
-            'Awas' => '#dc2626',
-            'Siaga' => '#ea580c',
-            default => '#0ea5e9'
+            'critical' => 'Kritis',
+            'high' => 'Tinggi', 
+            'medium' => 'Sedang',
+            'low' => 'Rendah',
+            default => 'Normal'
         };
     }
 } 

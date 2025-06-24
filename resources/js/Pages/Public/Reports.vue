@@ -81,26 +81,29 @@
             </div>
 
             <div class="space-y-2">
-              <Label for="reporter_phone">Nomor Telepon</Label>
+              <Label for="reporter_phone">Nomor Telepon (Opsional)</Label>
               <Input 
                 id="reporter_phone"
                 v-model="form.reporter_phone" 
-                placeholder="08xxxxxxxxxx"
+                placeholder="08xxxxxxxxxx (opsional)"
                 type="tel"
               />
+              <p class="text-sm text-muted-foreground">
+                Untuk follow-up jika diperlukan
+              </p>
             </div>
           </div>
 
           <div class="space-y-2">
-            <Label for="reporter_email">Email</Label>
+            <Label for="reporter_email">Email (Opsional)</Label>
             <Input 
               id="reporter_email"
               v-model="form.reporter_email" 
-              placeholder="email@example.com"
+              placeholder="email@example.com (opsional)"
               type="email"
             />
             <p class="text-sm text-muted-foreground">
-              Opsional - untuk mendapatkan update status laporan
+              Kosongkan jika tidak ingin memberikan email. Jika diisi, Anda akan mendapatkan update status laporan.
             </p>
           </div>
 

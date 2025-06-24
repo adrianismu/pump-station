@@ -188,12 +188,7 @@
                       v-else-if="notification.type === 'water_level'"
                       class="w-5 h-5 text-cyan-500 mt-0.5 flex-shrink-0" 
                     />
-                    <!-- Threshold Exceeded Icon -->
-                    <div 
-                      v-else-if="notification.type === 'threshold_exceeded'"
-                      class="w-2 h-2 rounded-full mt-2 flex-shrink-0"
-                      :style="{ backgroundColor: notification.color }"
-                    ></div>
+
                     <!-- Warning Icon -->
                     <AlertCircle 
                       v-else-if="notification.type === 'warning'" 
@@ -222,14 +217,16 @@
                           Level Air
                         </span>
                         
-                        <!-- Threshold Badge -->
+                        <!-- Severity Badge for Important Notifications -->
                         <span 
-                          v-else-if="notification.type === 'threshold_exceeded'"
+                          v-if="['critical', 'high', 'medium'].includes(notification.severity)"
                           class="text-xs px-2 py-1 rounded-full text-white flex-shrink-0 ml-2"
                           :style="{ backgroundColor: notification.color }"
                         >
-                          {{ notification.threshold_name }}
+                          {{ getSeverityLabel(notification.severity) }}
                         </span>
+                        
+
                       </div>
                       <p class="text-sm text-muted-foreground">{{ notification.message }}</p>
                       <div class="flex items-center justify-between mt-1">
@@ -237,14 +234,7 @@
                         <div class="flex items-center gap-2">
 
                           
-                          <!-- Water Level Display -->
-                          <p 
-                            v-if="notification.type === 'threshold_exceeded' && notification.water_level"
-                            class="text-xs font-medium"
-                            :style="{ color: notification.color }"
-                          >
-                            {{ notification.water_level }}m
-                          </p>
+
                         </div>
                       </div>
                     </div>
@@ -532,23 +522,13 @@ const fetchNotifications = async () => {
 
 // View notification and mark as read
 const viewNotification = async (notification) => {
-  // For threshold notifications, navigate to water level details
-  if (notification.type === 'threshold_exceeded' && notification.actions && notification.actions.length > 0) {
-    const primaryAction = notification.actions.find(action => action.type === 'primary');
-    if (primaryAction) {
-      router.visit(route(primaryAction.route, primaryAction.params));
-      showNotifications.value = false;
-      return;
-    }
-  }
-  
   // Extract alert ID from notification ID for alert-based notifications
   let alertId = notification.id;
   if (typeof notification.id === 'string' && notification.id.startsWith('alert_')) {
     alertId = notification.id.replace('alert_', '');
   }
   
-  // For other notifications, mark as read and navigate
+  // Mark as read and navigate
   if (!notification.read_at) {
     try {
       // Use web route as primary since we're using session auth
@@ -624,5 +604,16 @@ const fetchUnreadCount = async () => {
     // Fallback to 0 if fails
     unreadNotificationsCount.value = 0;
   }
+};
+
+// Get severity label for display (consistent with threshold settings)
+const getSeverityLabel = (severity) => {
+  const labels = {
+    'low': 'Normal',
+    'medium': 'Peringatan', 
+    'high': 'Kritis',
+    'critical': 'Darurat'
+  };
+  return labels[severity] || 'Normal';
 };
 </script>

@@ -22,9 +22,10 @@
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">Semua Tingkat</SelectItem>
-                <SelectItem value="critical">Kritis</SelectItem>
-                <SelectItem value="warning">Peringatan</SelectItem>
-                <SelectItem value="info">Darurat</SelectItem>
+                <SelectItem value="critical">Darurat</SelectItem>
+                <SelectItem value="high">Kritis</SelectItem>
+                <SelectItem value="medium">Peringatan</SelectItem>
+                <SelectItem value="low">Normal</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -45,9 +46,8 @@
                 <StatusBadge 
                   :level="alert.severity"
                   type="notification-severity"
-                  :custom-class="getSeverityClass(alert.severity)"
                 />
-                <span class="text-xs text-muted-foreground">{{ formatDate(alert.timestamp) }}</span>
+                <span class="text-xs text-muted-foreground">{{ formatDateTime(alert.timestamp) }}</span>
               </div>
               <h3 class="text-lg font-semibold mb-1">{{ alert.title }}</h3>
               <p class="text-sm text-muted-foreground mb-2 flex items-center gap-1">
@@ -64,9 +64,14 @@
                   <Home class="h-4 w-4 text-muted-foreground" />
                   <span class="text-sm">{{ alert.pump_house?.name || 'Sistem Umum' }}</span>
                 </div>
-                <div class="flex items-center gap-2">
-                  <Clock class="h-4 w-4 text-muted-foreground" />
-                  <span class="text-sm">{{ formatTimeAgo(alert.timestamp) }}</span>
+                <div class="space-y-1">
+                  <div class="flex items-center gap-2">
+                    <Clock class="h-4 w-4 text-muted-foreground" />
+                    <span class="text-sm">{{ formatTimeAgo(alert.timestamp) }}</span>
+                  </div>
+                  <div class="text-xs text-muted-foreground ml-6">
+                    {{ formatDateTime(alert.timestamp) }}
+                  </div>
                 </div>
               </div>
               
@@ -176,16 +181,20 @@
             <RadioGroup v-model="form.severity">
               <div class="flex gap-4">
                 <div class="flex items-center space-x-2">
-                  <RadioGroupItem value="Darurat" id="info" />
-                  <Label for="info">Darurat</Label>
+                  <RadioGroupItem value="low" id="low" />
+                  <Label for="low">Normal</Label>
                 </div>
                 <div class="flex items-center space-x-2">
-                  <RadioGroupItem value="Peringatan" id="warning" />
-                  <Label for="warning">Peringatan</Label>
+                  <RadioGroupItem value="medium" id="medium" />
+                  <Label for="medium">Peringatan</Label>
                 </div>
                 <div class="flex items-center space-x-2">
-                  <RadioGroupItem value="Kritis" id="critical" />
-                  <Label for="critical">Kritis</Label>
+                  <RadioGroupItem value="high" id="high" />
+                  <Label for="high">Kritis</Label>
+                </div>
+                <div class="flex items-center space-x-2">
+                  <RadioGroupItem value="critical" id="critical" />
+                  <Label for="critical">Darurat</Label>
                 </div>
               </div>
             </RadioGroup>
@@ -271,7 +280,7 @@ const props = defineProps({
 })
 
 // Use composables
-const { formatDate, formatTimeAgo } = useDateUtils()
+const { formatDate, formatTime, formatDateTime, formatTimeAgo } = useDateUtils()
 
 // State
 const searchQuery = ref('')
@@ -285,7 +294,7 @@ const itemsPerPage = 10
 const form = useForm({
   title: '',
   pump_house_id: '',
-  severity: 'Informasi',
+  severity: 'medium',
   description: ''
 })
 
@@ -318,13 +327,8 @@ const filteredAlerts = computed(() => {
 
   // Filter by severity
   if (severityFilter.value !== 'all') {
-    const severityMap = {
-      'critical': 'Kritis',
-      'warning': 'Peringatan', 
-      'info': 'Darurat'
-    }
     filtered = filtered.filter(alert => 
-      alert.severity === severityMap[severityFilter.value]
+      alert.severity === severityFilter.value
     )
   }
 
@@ -346,14 +350,6 @@ const paginatedAlerts = computed(() => {
 })
 
 // Methods
-const getSeverityClass = (severity) => {
-  const classMap = {
-    'Kritis': 'bg-destructive',
-    'Peringatan': 'bg-warning/10 text-warning border-warning',
-    'Darurat': 'bg-destructive/10 text-destructive border-destructive'
-  }
-  return classMap[severity] || ''
-}
 
 const isCompleted = (alert) => {
   return alert.actions && alert.actions.some(action => action.status === 'Selesai')

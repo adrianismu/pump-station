@@ -105,12 +105,12 @@
                 <Badge :variant="getStatusVariant(report.status)">
                   {{ report.status }}
                 </Badge>
-                <span class="text-xs text-muted-foreground">{{ formatDate(report.date) }}</span>
+                <span class="text-xs text-muted-foreground">{{ formatDate(report.created_at) }}</span>
               </div>
               <h3 class="text-lg font-semibold mb-1">{{ report.title }}</h3>
               <p class="text-sm text-muted-foreground mb-2">{{ report.location }}</p>
               <p class="text-sm mb-4">{{ report.description }}</p>
-              <div class="flex flex-wrap gap-2">
+              <div v-if="parseImages(report.images).length > 0" class="flex flex-wrap gap-2">
                 <div
                   v-for="(image, index) in parseImages(report.images)"
                   :key="index"
@@ -118,6 +118,9 @@
                 >
                   <img :src="image" alt="Report Image" class="h-full w-full object-cover" />
                 </div>
+              </div>
+              <div v-else class="text-sm text-muted-foreground">
+                Tidak ada gambar terlampir
               </div>
             </div>
             <div class="md:w-1/3 border-t md:border-t-0 md:border-l border-border pt-4 md:pt-0 md:pl-4">

@@ -175,7 +175,7 @@ class PublicService
      */
     public function getActiveAlerts()
     {
-        return Alert::where('severity', 'Awas')
+        return Alert::whereIn('severity', ['critical', 'high'])
             ->whereNotNull('public_message')
             ->where('is_active', true)
             ->where('created_at', '>', now()->subHours(3))

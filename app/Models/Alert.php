@@ -43,11 +43,11 @@ class Alert extends Model
     }
     
     /**
-     * Get active public alerts (Awas level with public message)
+     * Get active public alerts (critical and high level with public message)
      */
     public static function getActivePublicAlerts()
     {
-        return static::where('severity', 'Awas')
+        return static::whereIn('severity', ['critical', 'high'])
             ->whereNotNull('public_message')
             ->where('is_active', true)
             ->where('created_at', '>', now()->subHours(3))

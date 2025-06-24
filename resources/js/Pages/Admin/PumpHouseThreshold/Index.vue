@@ -263,7 +263,7 @@ const getCurrentLevelStatus = (pumpHouse) => {
     return exceededThreshold ? exceededThreshold.label : 'Normal';
   }
   
-  // Fallback to default thresholds
+  // Fallback to default thresholds (using consistent labels)
   if (currentLevel >= 3.0) return 'Darurat';
   if (currentLevel >= 2.5) return 'Kritis';
   if (currentLevel >= 2.0) return 'Peringatan';

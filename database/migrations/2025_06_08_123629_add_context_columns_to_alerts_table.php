@@ -16,7 +16,7 @@ return new class extends Migration
             // Pesan teknis untuk internal (petugas/admin)
             $table->text('internal_message')->after('description')->nullable();
 
-            // Pesan sederhana untuk publik (hanya jika severity 'Awas')
+            // Pesan sederhana untuk publik (hanya jika severity 'critical' atau 'high')
             $table->text('public_message')->nullable()->after('internal_message');
             
             // Modify type enum to include weather_forecast if not exists
