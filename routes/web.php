@@ -6,7 +6,7 @@ use App\Http\Controllers\Admin\EducationController;
 use App\Http\Controllers\Admin\MapController;
 use App\Http\Controllers\Admin\NotificationsController;
 use App\Http\Controllers\Admin\ReportsController;
-use App\Http\Controllers\LandingController;
+
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\Admin\WaterLevelController;
 use App\Http\Controllers\Admin\ThresholdSettingController;

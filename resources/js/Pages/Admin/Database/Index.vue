@@ -249,6 +249,8 @@ import {
 import { Button } from "@/Components/ui/button"
 import { Input } from "@/Components/ui/input"
 import { Badge } from "@/Components/ui/badge"
+import { useDateUtils } from '@/composables/useDateUtils'
+import { useStatusUtils } from '@/composables/useStatusUtils'
 
 import Layout from "@/Layouts/AdminLayout.vue"
 
@@ -258,6 +260,10 @@ defineOptions({ layout: Layout })
 const props = defineProps({
   pumpHouses: Array,
 })
+
+// Use composables
+const { formatTimeAgo } = useDateUtils()
+const { getPumpHouseStatusVariant } = useStatusUtils()
 
 const searchQuery = ref("")
 const statusFilter = ref("all")
@@ -329,40 +335,8 @@ const sortBy = (column) => {
   }
 }
 
-const getBadgeVariant = (status) => {
-  if (status === 'Aktif') return 'success'
-  if (status === 'Perlu Perhatian') return 'warning'
-  if (status === 'Tidak Aktif') return 'destructive'
-  return 'default'
-}
-
-const formatTimeAgo = (dateString) => {
-  const date = new Date(dateString)
-  const now = new Date()
-  const diffInSeconds = Math.floor((now - date) / 1000)
-
-  if (diffInSeconds < 60) {
-    return `${diffInSeconds} detik yang lalu`
-  }
-
-  const diffInMinutes = Math.floor(diffInSeconds / 60)
-  if (diffInMinutes < 60) {
-    return `${diffInMinutes} menit yang lalu`
-  }
-
-  const diffInHours = Math.floor(diffInMinutes / 60)
-  if (diffInHours < 24) {
-    return `${diffInHours} jam yang lalu`
-  }
-
-  const diffInDays = Math.floor(diffInHours / 24)
-  if (diffInDays < 30) {
-    return `${diffInDays} hari yang lalu`
-  }
-
-  const diffInMonths = Math.floor(diffInDays / 30)
-  return `${diffInMonths} bulan yang lalu`
-}
+// Use composables for status and date functions
+const getBadgeVariant = getPumpHouseStatusVariant
 
 const confirmDelete = (pumpHouse) => {
   pumpHouseToDelete.value = pumpHouse

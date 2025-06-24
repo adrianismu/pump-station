@@ -213,48 +213,17 @@ import { Button } from '@/Components/ui/button'
 import { Label } from '@/Components/ui/label'
 import { Badge } from '@/Components/ui/badge'
 import { Separator } from '@/Components/ui/separator'
+import { useDateUtils } from '@/composables/useDateUtils'
+import { useStatusUtils } from '@/composables/useStatusUtils'
 
 defineProps({
     threshold: Object,
 })
 
-const getSeverityColor = (severity) => {
-    const colors = {
-        low: 'bg-green-500',
-        medium: 'bg-yellow-500',
-        high: 'bg-orange-500',
-        critical: 'bg-red-500',
-    }
-    return colors[severity] || 'bg-gray-500'
-}
+// Use composables
+const { formatDateTime } = useDateUtils()
+const { getSeverityVariant, getSeverityLabel, getSeverityColor } = useStatusUtils()
 
-const getSeverityVariant = (severity) => {
-    const variants = {
-        low: 'default',
-        medium: 'secondary',
-        high: 'destructive',
-        critical: 'destructive',
-    }
-    return variants[severity] || 'secondary'
-}
-
-const getSeverityLabel = (severity) => {
-    const labels = {
-        low: 'Rendah',
-        medium: 'Sedang',
-        high: 'Tinggi',
-        critical: 'Kritis',
-    }
-    return labels[severity] || severity
-}
-
-const formatDate = (dateString) => {
-    return new Date(dateString).toLocaleDateString('id-ID', {
-        year: 'numeric',
-        month: 'long',
-        day: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit'
-    })
-}
+// Alias untuk consistency
+const formatDate = formatDateTime
 </script> 

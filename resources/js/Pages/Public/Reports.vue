@@ -274,6 +274,7 @@
 <script setup>
 import { ref, computed } from 'vue'
 import { useForm, router } from '@inertiajs/vue3'
+import { useImageUtils } from '@/composables/useImageUtils'
 import PublicLayout from '@/Layouts/PublicLayout.vue'
 import { Button } from '@/Components/ui/button'
 import { Card } from '@/Components/ui/card'
@@ -304,6 +305,9 @@ defineOptions({ layout: PublicLayout })
 const props = defineProps({
   pumpHouses: Array,
 })
+
+// Use composables
+const { validateImageFile } = useImageUtils()
 
 const form = useForm({
   pump_house_id: '',
@@ -337,9 +341,10 @@ const handleImageUpload = (event) => {
   }
   
   files.forEach((file, index) => {
-    // Check file size (2MB limit)
-    if (file.size > 2 * 1024 * 1024) {
-      alert(`Gambar ${file.name} terlalu besar. Maksimal 2MB per gambar.`)
+    // Use validation from composable
+    const validation = validateImageFile(file, 2)
+    if (!validation.isValid) {
+      alert(`Gambar ${file.name}: ${validation.error}`)
       return
     }
     
