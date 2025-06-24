@@ -159,16 +159,51 @@ require __DIR__.'/auth.php';
 
 // Health check endpoint for Railway monitoring
 Route::get('/health', function () {
+    $recentAlerts = \App\Models\Alert::where('type', 'weather_forecast')
+        ->where('created_at', '>=', now()->subHours(2))
+        ->count();
+        
+    $recentNotifications = \Illuminate\Support\Facades\DB::table('notifications')
+        ->where('created_at', '>=', now()->subHours(2))
+        ->count();
+        
+    $lastSchedulerRun = \Illuminate\Support\Facades\DB::table('job_batches')
+        ->latest('created_at')
+        ->value('created_at');
+    
     return response()->json([
         'status' => 'ok',
         'timestamp' => now(),
+        'environment' => app()->environment(),
         'queue_connection' => config('queue.default'),
-        'notifications_count' => \Illuminate\Support\Facades\DB::table('notifications')->count(),
-        'failed_jobs_count' => \Illuminate\Support\Facades\Schema::hasTable('failed_jobs') 
-            ? \Illuminate\Support\Facades\DB::table('failed_jobs')->count() 
-            : 0,
-        'alerts_count' => \App\Models\Alert::count(),
-        'roles_seeded' => \Spatie\Permission\Models\Role::count() > 0,
-        'users_with_roles' => \App\Models\User::role('admin')->count() + \App\Models\User::role('petugas')->count(),
+        'database' => [
+            'notifications_total' => \Illuminate\Support\Facades\DB::table('notifications')->count(),
+            'notifications_recent' => $recentNotifications,
+            'alerts_total' => \App\Models\Alert::count(),
+            'alerts_recent' => $recentAlerts,
+            'failed_jobs' => \Illuminate\Support\Facades\Schema::hasTable('failed_jobs') 
+                ? \Illuminate\Support\Facades\DB::table('failed_jobs')->count() 
+                : 0,
+        ],
+        'users' => [
+            'total' => \App\Models\User::count(),
+            'admins' => \App\Models\User::role('admin')->count(),
+            'petugas' => \App\Models\User::role('petugas')->count(),
+            'roles_seeded' => \Spatie\Permission\Models\Role::count() > 0,
+        ],
+        'pump_houses' => [
+            'total' => \App\Models\PumpHouse::count(),
+            'with_coordinates' => \App\Models\PumpHouse::whereNotNull('lat')->whereNotNull('lng')->count(),
+        ],
+        'scheduler' => [
+            'last_run' => $lastSchedulerRun,
+            'weather_alerts_enabled' => true,
+        ],
+        'system' => [
+            'memory_usage' => number_format(memory_get_usage(true) / 1024 / 1024, 2) . ' MB',
+            'peak_memory' => number_format(memory_get_peak_usage(true) / 1024 / 1024, 2) . ' MB',
+            'php_version' => PHP_VERSION,
+            'laravel_version' => app()->version(),
+        ]
     ]);
 });

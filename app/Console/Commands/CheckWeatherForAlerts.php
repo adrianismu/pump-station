@@ -6,6 +6,7 @@ use Illuminate\Console\Command;
 use App\Services\WeatherService;
 use App\Services\AlertService;
 use App\Models\PumpHouse;
+use Illuminate\Support\Facades\Log;
 
 class CheckWeatherForAlerts extends Command
 {
@@ -39,43 +40,128 @@ class CheckWeatherForAlerts extends Command
     public function handle()
     {
         $this->info('Checking weather forecasts for alert conditions...');
+        
+        // Log command start
+        Log::info('Weather alert checker started', [
+            'timestamp' => now(),
+            'environment' => app()->environment()
+        ]);
 
         try {
+            // Check if required tables exist
+            if (!\Schema::hasTable('pump_houses')) {
+                $this->error('Pump houses table not found');
+                return 1;
+            }
+            
+            if (!\Schema::hasTable('notifications')) {
+                $this->error('Notifications table not found');
+                return 1;
+            }
+
             // Get unique coordinates to avoid duplicates
             $uniqueCoordinates = PumpHouse::select('lat', 'lng', 'address')
+                ->whereNotNull('lat')
+                ->whereNotNull('lng')
                 ->groupBy('lat', 'lng', 'address')
                 ->get();
 
+            if ($uniqueCoordinates->isEmpty()) {
+                $this->warn('No pump houses with coordinates found');
+                Log::warning('No pump houses with coordinates for weather check');
+                return 0;
+            }
+
+            $this->info("Found {$uniqueCoordinates->count()} unique locations to check");
             $alertsCreated = 0;
+            $locationsChecked = 0;
 
             foreach ($uniqueCoordinates as $location) {
                 $this->line("Checking weather for {$location->address} ({$location->lat}, {$location->lng})");
                 
-                $weatherData = $this->weatherService->getWeatherForecast($location->lat, $location->lng);
-                
-                if ($this->shouldCreateWeatherAlert($weatherData)) {
-                    // Get all pump houses for this location
-                    $pumpHouses = PumpHouse::where('lat', $location->lat)
-                        ->where('lng', $location->lng)
-                        ->get();
-
-                    foreach ($pumpHouses as $pumpHouse) {
-                        $this->alertService->createWeatherAlert($pumpHouse, $weatherData);
-                        $alertsCreated++;
+                try {
+                    $weatherData = $this->weatherService->getWeatherForecast($location->lat, $location->lng);
+                    $locationsChecked++;
+                    
+                    if (!$weatherData) {
+                        $this->warn("No weather data received for {$location->address}");
+                        continue;
                     }
                     
-                    $this->warn("Weather alert created for {$location->address} - High precipitation risk detected!");
+                    if ($this->shouldCreateWeatherAlert($weatherData)) {
+                        // Get all pump houses for this location
+                        $pumpHouses = PumpHouse::where('lat', $location->lat)
+                            ->where('lng', $location->lng)
+                            ->get();
+
+                        foreach ($pumpHouses as $pumpHouse) {
+                            try {
+                                $alert = $this->alertService->createWeatherAlert($pumpHouse, $weatherData);
+                                $alertsCreated++;
+                                
+                                $this->info("Weather alert created for {$pumpHouse->name} (ID: {$alert->id})");
+                                
+                                Log::info('Weather alert created successfully', [
+                                    'alert_id' => $alert->id,
+                                    'pump_house_id' => $pumpHouse->id,
+                                    'pump_house_name' => $pumpHouse->name,
+                                    'severity' => $alert->severity,
+                                    'precipitation' => $weatherData['current']['precipitation'] ?? 0,
+                                    'timestamp' => now()
+                                ]);
+                                
+                            } catch (\Exception $alertError) {
+                                $this->error("Failed to create alert for {$pumpHouse->name}: {$alertError->getMessage()}");
+                                Log::error('Failed to create weather alert', [
+                                    'pump_house_id' => $pumpHouse->id,
+                                    'error' => $alertError->getMessage(),
+                                    'location' => $location->address
+                                ]);
+                            }
+                        }
+                        
+                        $this->warn("Weather alert created for {$location->address} - High precipitation risk detected!");
+                    } else {
+                        $this->line("Weather conditions normal for {$location->address}");
+                    }
+                    
+                } catch (\Exception $weatherError) {
+                    $this->error("Failed to check weather for {$location->address}: {$weatherError->getMessage()}");
+                    Log::error('Weather API error', [
+                        'location' => $location->address,
+                        'lat' => $location->lat,
+                        'lng' => $location->lng,
+                        'error' => $weatherError->getMessage()
+                    ]);
                 }
             }
 
+            $message = "Weather check completed. {$alertsCreated} alerts created from {$locationsChecked} locations checked.";
+            
             if ($alertsCreated > 0) {
-                $this->info("Weather check completed. {$alertsCreated} alerts created.");
+                $this->info($message);
             } else {
-                $this->info("Weather check completed. No alerts needed.");
+                $this->info("Weather check completed. No alerts needed from {$locationsChecked} locations checked.");
             }
+            
+            // Log completion
+            Log::info('Weather alert checker completed', [
+                'alerts_created' => $alertsCreated,
+                'locations_checked' => $locationsChecked,
+                'total_locations' => $uniqueCoordinates->count(),
+                'timestamp' => now()
+            ]);
 
         } catch (\Exception $e) {
-            $this->error("Error checking weather: " . $e->getMessage());
+            $errorMessage = "Error checking weather: " . $e->getMessage();
+            $this->error($errorMessage);
+            
+            Log::error('Weather alert checker failed', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+                'timestamp' => now()
+            ]);
+            
             return 1;
         }
 
