@@ -740,11 +740,11 @@ onMounted(() => {
     
     console.log('Map container found, dimensions:', mapContainer.offsetWidth, 'x', mapContainer.offsetHeight);
     
-    const map = L.map("detail-map").setView([pumpHouse.lat, pumpHouse.lng], 15)
+  const map = L.map("detail-map").setView([pumpHouse.lat, pumpHouse.lng], 15)
 
-    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
-    }).addTo(map)
+  L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+  }).addTo(map)
 
     // Add marker for the pump house with explicit icon configuration
     const marker = L.marker([pumpHouse.lat, pumpHouse.lng], {
@@ -758,8 +758,8 @@ onMounted(() => {
         shadowSize: [41, 41]
       })
     })
-      .addTo(map)
-      .bindPopup(`<b>${pumpHouse.name}</b><br>${pumpHouse.status}`)
+    .addTo(map)
+    .bindPopup(`<b>${pumpHouse.name}</b><br>${pumpHouse.status}`)
 
     console.log('Marker added successfully');
     

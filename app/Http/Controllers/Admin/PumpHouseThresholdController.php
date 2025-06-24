@@ -150,7 +150,7 @@ class PumpHouseThresholdController extends Controller
         
         $pumpHouse = PumpHouse::with([
             'threshold_settings' => function($query) {
-                $query->orderBy('water_level', 'asc');
+            $query->orderBy('water_level', 'asc');
             },
             'waterLevelHistory' => function($query) {
                 $query->orderBy('recorded_at', 'desc')->limit(1);
