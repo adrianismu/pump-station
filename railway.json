@@ -5,5 +5,26 @@
     "sleepApplication": false,
     "restartPolicyType": "ON_FAILURE",
     "startCommand": "bash start-combined.sh"
+  },
+  "services": {
+    "web": {
+      "build": {
+        "builder": "NIXPACKS"
+      },
+      "deploy": {
+        "startCommand": "bash start.sh",
+        "numReplicas": 1
+      }
+    },
+    "scheduler": {
+      "build": {
+        "builder": "NIXPACKS"
+      },
+      "deploy": {
+        "startCommand": "bash start-worker.sh",
+        "numReplicas": 1,
+        "restartPolicyType": "ON_FAILURE"
+      }
+    }
   }
 } 

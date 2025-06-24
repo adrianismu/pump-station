@@ -12,6 +12,9 @@ use App\Services\AlertService;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
+use Exception;
 
 class WaterLevelController extends Controller
 {
@@ -123,32 +126,69 @@ class WaterLevelController extends Controller
 
         $recordedAt = $request->recorded_at ? Carbon::parse($request->recorded_at) : now();
 
-        $waterLevel = WaterLevelHistory::create([
-            'pump_house_id' => $request->pump_house_id,
-            'water_level' => $request->water_level,
-            'recorded_at' => $recordedAt,
-        ]);
+        try {
+            // Use database transaction for Railway reliability
+            DB::beginTransaction();
+            
+            $waterLevel = WaterLevelHistory::create([
+                'pump_house_id' => $request->pump_house_id,
+                'water_level' => $request->water_level,
+                'recorded_at' => $recordedAt,
+            ]);
 
-        // Update pump house last_updated timestamp only
-        $pumpHouse = PumpHouse::find($request->pump_house_id);
-        $pumpHouse->update([
-            'last_updated' => $recordedAt,
-        ]);
+            // Update pump house last_updated timestamp only
+            $pumpHouse = PumpHouse::find($request->pump_house_id);
+            $pumpHouse->update([
+                'last_updated' => $recordedAt,
+            ]);
 
-        // Check if alert needs to be created (only for current time records)
-        if (!$request->recorded_at || Carbon::parse($request->recorded_at)->isToday()) {
-            $this->checkAndCreateAlert($pumpHouse, $request->water_level);
-        }
+            DB::commit();
 
-        // Redirect back to history page if coming from history
-        $redirectBack = $request->get('redirect_back');
-        if ($redirectBack === 'history') {
-            return redirect()->route('admin.water-level.history', $request->pump_house_id)
+            // Handle alert creation separately to prevent Railway 500 errors
+            if (!$request->recorded_at || Carbon::parse($request->recorded_at)->isToday()) {
+                try {
+                    // Use queue for alert processing in Railway to prevent timeout
+                    if (app()->environment('production')) {
+                        dispatch(function() use ($pumpHouse, $request) {
+                            $this->checkAndCreateAlert($pumpHouse, $request->water_level);
+                        })->onQueue('alerts');
+                    } else {
+                        $this->checkAndCreateAlert($pumpHouse, $request->water_level);
+                    }
+                } catch (Exception $e) {
+                    // Log alert creation error but don't fail the water level save
+                    Log::error('Alert creation failed for water level input', [
+                        'pump_house_id' => $request->pump_house_id,
+                        'water_level' => $request->water_level,
+                        'error' => $e->getMessage()
+                    ]);
+                }
+            }
+
+            // Redirect back to history page if coming from history
+            $redirectBack = $request->get('redirect_back');
+            if ($redirectBack === 'history') {
+                return redirect()->route('admin.water-level.history', $request->pump_house_id)
+                    ->with('success', 'Data ketinggian air berhasil disimpan');
+            }
+            
+            return redirect()->route('admin.water-level.index')
                 ->with('success', 'Data ketinggian air berhasil disimpan');
-        }
 
-        return redirect()->route('admin.water-level.index')
-            ->with('success', 'Data ketinggian air berhasil disimpan');
+        } catch (Exception $e) {
+            DB::rollback();
+            
+            // Railway-specific error handling
+            Log::error('Water level save failed in Railway', [
+                'pump_house_id' => $request->pump_house_id,
+                'water_level' => $request->water_level,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+
+            return back()->withErrors(['error' => 'Terjadi kesalahan saat menyimpan data. Silakan coba lagi.'])
+                        ->withInput();
+        }
     }
 
     public function show($id)
@@ -356,28 +396,49 @@ class WaterLevelController extends Controller
 
     private function checkAndCreateAlert($pumpHouse, $waterLevel)
     {
-        // Use AlertService to create contextualized water level alert
-        $alertService = app(AlertService::class);
-        
-        // Get the highest exceeded threshold for this pump house
-        $threshold = PumpHouseThresholdSetting::getExceededThresholdForPumpHouse($pumpHouse->id, $waterLevel);
-        
-        // Fallback to global threshold if no pump house specific threshold exists
-        if (!$threshold) {
-            $threshold = ThresholdSetting::getExceededThreshold($waterLevel);
-        }
-        
-        if ($threshold && $threshold->name !== 'normal') {
-            // Check if similar alert already exists in the last hour
-            $existingAlert = Alert::where('type', 'water_level')
-                ->where('pump_house_id', $pumpHouse->id)
-                ->where('created_at', '>=', Carbon::now()->subHour())
-                ->first();
-
-            if (!$existingAlert) {
-                // Create alert using AlertService for contextualized messaging
-                $alertService->createWaterLevelAlert($pumpHouse, $waterLevel);
+        try {
+            // Railway-specific: Add connection check
+            if (!DB::connection()->getPdo()) {
+                Log::error('Database connection lost during alert creation');
+                return;
             }
+
+            // Get the highest exceeded threshold for this pump house
+            $threshold = PumpHouseThresholdSetting::where('pump_house_id', $pumpHouse->id)
+                ->where('is_active', true)
+                ->where('water_level', '<=', $waterLevel)
+                ->orderBy('water_level', 'desc')
+                ->first();
+            
+            // Fallback to global threshold if no pump house specific threshold exists
+            if (!$threshold) {
+                $threshold = ThresholdSetting::where('is_active', true)
+                    ->where('water_level', '<=', $waterLevel)
+                    ->orderBy('water_level', 'desc')
+                    ->first();
+            }
+            
+            if ($threshold && $threshold->name !== 'normal') {
+                // Check if similar alert already exists in the last hour
+                $existingAlert = Alert::where('type', 'water_level')
+                    ->where('pump_house_id', $pumpHouse->id)
+                    ->where('created_at', '>=', Carbon::now()->subHour())
+                    ->first();
+
+                if (!$existingAlert) {
+                    // Use AlertService to create contextualized water level alert
+                    $alertService = app(AlertService::class);
+                    $alertService->createWaterLevelAlert($pumpHouse, $waterLevel);
+                }
+            }
+        } catch (Exception $e) {
+            // Railway-specific: Don't let alert creation failure block water level save
+            Log::error('Critical alert creation error in Railway', [
+                'pump_house_id' => $pumpHouse->id,
+                'water_level' => $waterLevel,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
         }
     }
 } 

@@ -9,7 +9,9 @@ use App\Models\Report;
 use App\Models\ThresholdSetting;
 use App\Models\PumpHouseThresholdSetting;
 use Carbon\Carbon;
+use Exception;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 
 class PublicService
 {
@@ -43,37 +45,74 @@ class PublicService
      */
     public function createReport(Request $request)
     {
-        $imageUrls = [];
-        $cloudinaryIds = [];
-        
-        if ($request->hasFile('images')) {
-            $uploadResults = $this->imageUploadService->uploadMultipleImages(
-                $request->file('images'), 
-                'reports'
-            );
+        try {
+            $imageUrls = [];
+            $cloudinaryIds = [];
             
-            foreach ($uploadResults as $result) {
-                $imageUrls[] = $result['url'];
-                if ($result['cloudinary_id']) {
-                    $cloudinaryIds[] = $result['cloudinary_id'];
+            // Railway-specific: Handle image uploads with timeout protection
+            if ($request->hasFile('images')) {
+                try {
+                    $uploadResults = $this->imageUploadService->uploadMultipleImages(
+                        $request->file('images'), 
+                        'reports'
+                    );
+                    
+                    foreach ($uploadResults as $result) {
+                        if (isset($result['url'])) {
+                            $imageUrls[] = $result['url'];
+                        }
+                        if (isset($result['cloudinary_id']) && $result['cloudinary_id']) {
+                            $cloudinaryIds[] = $result['cloudinary_id'];
+                        }
+                    }
+                } catch (Exception $e) {
+                    // Log image upload error but don't fail report creation
+                    Log::error('Image upload failed in Railway for public report', [
+                        'error' => $e->getMessage(),
+                        'request_data' => $request->only(['pump_house_id', 'reporter_name', 'title'])
+                    ]);
+                    // Continue without images
                 }
             }
-        }
-        
-        $report = new Report();
-        $report->pump_house_id = $request->pump_house_id;
-        $report->reporter_name = $request->reporter_name;
-        $report->reporter_email = $request->reporter_email;
-        $report->reporter_phone = $request->reporter_phone;
-        $report->title = $request->title;
-        $report->description = $request->description;
-        $report->location = $request->location_detail ?? '';
-        $report->images = $imageUrls;
-        $report->cloudinary_ids = $cloudinaryIds;
-        $report->status = 'Belum Ditanggapi';
-        $report->save();
+            
+            // Railway-specific: Handle nullable email properly
+            $reporterEmail = $request->reporter_email;
+            if (empty($reporterEmail) || $reporterEmail === '') {
+                $reporterEmail = null;
+            }
+            
+            $report = new Report();
+            $report->pump_house_id = $request->pump_house_id;
+            $report->reporter_name = $request->reporter_name;
+            $report->reporter_email = $reporterEmail; // Properly handle null
+            $report->reporter_phone = $request->reporter_phone;
+            $report->title = $request->title;
+            $report->description = $request->description;
+            $report->location = $request->location_detail ?? '';
+            $report->images = $imageUrls;
+            $report->cloudinary_ids = $cloudinaryIds;
+            $report->status = 'Belum Ditanggapi';
+            
+            // Railway-specific: Use explicit save with error handling
+            if (!$report->save()) {
+                throw new Exception('Failed to save report to database');
+            }
 
-        return $report;
+            return $report;
+            
+        } catch (Exception $e) {
+            Log::error('Public report creation failed in Railway', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+                'request_data' => $request->only([
+                    'pump_house_id', 'reporter_name', 'reporter_email', 
+                    'reporter_phone', 'title', 'description'
+                ])
+            ]);
+            
+            // Re-throw the exception to be handled by controller
+            throw $e;
+        }
     }
 
     /**

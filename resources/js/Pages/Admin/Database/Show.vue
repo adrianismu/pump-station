@@ -499,10 +499,13 @@ L.Icon.Default.mergeOptions({
   shadowUrl: 'https://unpkg.com/leaflet@1.7.1/dist/images/marker-shadow.png',
 })
 
-import { getWeatherData, getWeatherDataForPumpHouse, getWeatherDescription, formatRainfall, getRainfallIntensity, getWeatherIcon } from '@/services/weatherService'
+import { getWeatherData, getWeatherDataForPumpHouse, getWeatherDescription, formatRainfall, getRainfallIntensity } from '@/services/weatherService'
 import WaterLevelChart from '@/Components/Charts/WaterLevelChart.vue'
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/Components/ui/dialog'
 import { useToast } from '@/Components/ui/toast'
+import { useDateUtils } from '@/composables/useDateUtils'
+import { useStatusUtils } from '@/composables/useStatusUtils'
+import { useIconMapping } from '@/composables/useIconMapping'
 
 defineOptions({ layout: AdminLayout })
 
@@ -526,6 +529,11 @@ const props = defineProps({
 })
 
 const { pumpHouse, canEdit } = props
+
+// Use composables
+const { formatTimeAgo, formatDateTime } = useDateUtils()
+const { getPumpHouseStatusVariant } = useStatusUtils()
+const { getWeatherIcon: getWeatherComponent } = useIconMapping()
 
 // Toast for notifications
 const { toast } = useToast()
@@ -777,48 +785,8 @@ onMounted(() => {
   fetchWeatherData()
 })
 
-const formatTimeAgo = (dateString) => {
-  if (!dateString) return "Tidak ada data"
-
-  const date = new Date(dateString)
-  const now = new Date()
-  const diffInSeconds = Math.floor((now - date) / 1000)
-
-  if (diffInSeconds < 60) {
-    return `${diffInSeconds} detik yang lalu`
-  }
-
-  const diffInMinutes = Math.floor(diffInSeconds / 60)
-  if (diffInMinutes < 60) {
-    return `${diffInMinutes} menit yang lalu`
-  }
-
-  const diffInHours = Math.floor(diffInMinutes / 60)
-  if (diffInHours < 24) {
-    return `${diffInHours} jam yang lalu`
-  }
-
-  const diffInDays = Math.floor(diffInHours / 24)
-  if (diffInDays < 30) {
-    return `${diffInDays} hari yang lalu`
-  }
-
-  const diffInMonths = Math.floor(diffInDays / 30)
-  return `${diffInMonths} bulan yang lalu`
-}
-
-const formatDate = (dateString) => {
-  if (!dateString) return "Tidak ada data"
-
-  const date = new Date(dateString)
-  return date.toLocaleDateString("id-ID", {
-    day: "numeric",
-    month: "long",
-    year: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-  })
-}
+// Alias untuk consistency dengan composables
+const formatDate = formatDateTime
 
 const fetchWeatherData = async () => {
   weatherLoading.value = true
@@ -857,7 +825,7 @@ const getCurrentWeather = computed(() => {
     windSpeed: current.wind_speed_10m || 0,
     // Use backend-provided descriptions and icons or fallback to local functions
     weatherDescription: current.weather_description || getWeatherDescription(current.weather_code),
-    weatherIcon: current.weather_icon || getWeatherIcon(current.weather_code),
+    weatherIcon: current.weather_icon || 'Cloud',
     // Include flood risk from backend if available
     floodRisk: weatherData.value.flood_risk
   }
@@ -877,7 +845,7 @@ const getDailyForecast = computed(() => {
       weatherCode: weatherCode,
       // Use backend-provided descriptions and icons arrays or fallback to local functions
       weatherDescription: weatherData.value.daily.weather_descriptions?.[index] || getWeatherDescription(weatherCode),
-      weatherIcon: weatherData.value.daily.weather_icons?.[index] || getWeatherIcon(weatherCode)
+      weatherIcon: weatherData.value.daily.weather_icons?.[index] || 'Cloud'
     }
   })
 })
@@ -886,27 +854,8 @@ const formatDay = (date) => {
   return date.toLocaleDateString('id-ID', { weekday: 'long' })
 }
 
-const getWeatherComponent = (iconName) => {
-  const iconMap = {
-    'Sun': Sun,
-    'Cloud': Cloud,
-    'CloudSun': CloudSun,
-    'CloudFog': CloudFog,
-    'CloudDrizzle': CloudDrizzle,
-    'CloudRain': CloudRain,
-    'CloudSnow': CloudSnow,
-    'CloudLightning': CloudLightning
-  }
-  
-  return iconMap[iconName] || Cloud
-}
-
-const getStatusVariant = (status) => {
-  if (status === 'Aktif') return 'success'
-  if (status === 'Perlu Perhatian') return 'warning'
-  if (status === 'Tidak Aktif') return 'destructive'
-  return 'default'
-}
+// Use composable for status variant
+const getStatusVariant = getPumpHouseStatusVariant
 
 const lastUpdate = computed(() => {
   const latest = props.waterLevelHistory?.[0]

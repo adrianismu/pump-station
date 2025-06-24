@@ -74,28 +74,78 @@ class NotificationService
      */
     private function storeNotifications(Alert $alert, array $recipients)
     {
+        $successCount = 0;
+        $errorCount = 0;
+        
         try {
             foreach ($recipients as $recipient) {
                 $user = User::find($recipient['user_id']);
                 if ($user) {
-                    $user->notify(new WeatherAlertNotification($alert));
-                    Log::info('Notification sent successfully', [
-                        'user_id' => $user->id,
-                        'user_email' => $user->email,
-                        'alert_id' => $alert->id,
-                        'alert_type' => $alert->type,
-                        'environment' => app()->environment()
+                    try {
+                        // Force synchronous notification (no queue)
+                        $user->notify(new WeatherAlertNotification($alert));
+                        $successCount++;
+                        
+                        Log::info('Notification sent successfully', [
+                            'user_id' => $user->id,
+                            'user_email' => $user->email,
+                            'user_name' => $user->name,
+                            'alert_id' => $alert->id,
+                            'alert_type' => $alert->type,
+                            'alert_severity' => $alert->severity,
+                            'environment' => app()->environment(),
+                            'timestamp' => now()->toDateTimeString()
+                        ]);
+                    } catch (\Exception $userError) {
+                        $errorCount++;
+                        Log::error('Failed to send notification to specific user', [
+                            'user_id' => $user->id,
+                            'user_email' => $user->email,
+                            'alert_id' => $alert->id,
+                            'error' => $userError->getMessage(),
+                            'environment' => app()->environment()
+                        ]);
+                    }
+                } else {
+                    $errorCount++;
+                    Log::warning('User not found for notification', [
+                        'user_id' => $recipient['user_id'],
+                        'alert_id' => $alert->id
                     ]);
                 }
             }
+            
+            // Log summary
+            Log::info('Notification distribution completed', [
+                'alert_id' => $alert->id,
+                'alert_type' => $alert->type,
+                'pump_house_id' => $alert->pump_house_id,
+                'success_count' => $successCount,
+                'error_count' => $errorCount,
+                'total_recipients' => count($recipients),
+                'environment' => app()->environment()
+            ]);
+            
         } catch (\Exception $e) {
-            Log::error('Failed to send notifications', [
+            Log::error('Critical error in notification distribution', [
                 'alert_id' => $alert->id,
                 'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
                 'recipients_count' => count($recipients),
                 'environment' => app()->environment()
             ]);
+            
+            // Throw exception for Railway monitoring
+            if (app()->environment('production')) {
+                throw new \Exception("Notification system failed: " . $e->getMessage());
+            }
         }
+        
+        return [
+            'success_count' => $successCount,
+            'error_count' => $errorCount,
+            'total_recipients' => count($recipients)
+        ];
     }
 
     /**
@@ -141,8 +191,6 @@ class NotificationService
         
         return $notifications;
     }
-
-
 
     /**
      * Get contextualized alerts for user based on role and access
@@ -299,8 +347,6 @@ class NotificationService
         return $breaches;
     }
 
-
-
     /**
      * Get severity color for display
      */
@@ -327,6 +373,45 @@ class NotificationService
             'low' => 'Rendah',
             default => 'Normal'
         };
+    }
+
+    /**
+     * Send Railway notification for testing purposes
+     */
+    public function sendRailwayNotification(string $title, string $message, string $severity = 'info'): bool
+    {
+        try {
+            Log::info('Railway notification test', [
+                'title' => $title,
+                'message' => $message,
+                'severity' => $severity,
+                'environment' => app()->environment(),
+                'timestamp' => now()->toDateTimeString()
+            ]);
+
+            // In production environment, you could send this to external monitoring
+            if (app()->environment('production')) {
+                // You can integrate with monitoring services like DataDog, Sentry, etc.
+                // For now, just log it
+                Log::channel('single')->info('RAILWAY_NOTIFICATION', [
+                    'title' => $title,
+                    'message' => $message,
+                    'severity' => $severity,
+                    'timestamp' => now()->toDateTimeString()
+                ]);
+            }
+
+            return true;
+        } catch (\Exception $e) {
+            Log::error('Railway notification failed', [
+                'title' => $title,
+                'message' => $message,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            
+            return false;
+        }
     }
 } 
 

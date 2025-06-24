@@ -81,13 +81,12 @@
             </div>
 
             <div class="space-y-2">
-              <Label for="reporter_phone">Nomor Telepon <span class="text-red-500">*</span></Label>
+              <Label for="reporter_phone">Nomor Telepon (Opsional)</Label>
               <Input 
                 id="reporter_phone"
                 v-model="form.reporter_phone" 
                 placeholder="08xxxxxxxxxx (opsional)"
                 type="tel"
-                required
               />
               <p class="text-sm text-muted-foreground">
                 Untuk follow-up jika diperlukan
@@ -275,6 +274,7 @@
 <script setup>
 import { ref, computed } from 'vue'
 import { useForm, router } from '@inertiajs/vue3'
+import { useImageUtils } from '@/composables/useImageUtils'
 import PublicLayout from '@/Layouts/PublicLayout.vue'
 import { Button } from '@/Components/ui/button'
 import { Card } from '@/Components/ui/card'
@@ -305,6 +305,9 @@ defineOptions({ layout: PublicLayout })
 const props = defineProps({
   pumpHouses: Array,
 })
+
+// Use composables
+const { validateImageFile } = useImageUtils()
 
 const form = useForm({
   pump_house_id: '',
@@ -338,9 +341,10 @@ const handleImageUpload = (event) => {
   }
   
   files.forEach((file, index) => {
-    // Check file size (2MB limit)
-    if (file.size > 2 * 1024 * 1024) {
-      alert(`Gambar ${file.name} terlalu besar. Maksimal 2MB per gambar.`)
+    // Use validation from composable
+    const validation = validateImageFile(file, 2)
+    if (!validation.valid) {
+      alert(`Gambar ${file.name}: ${validation.error}`)
       return
     }
     
@@ -369,56 +373,73 @@ const removeImage = (index) => {
 const submitReport = () => {
   isSubmitting.value = true
   
+  // Validate form first
+  if (!form.pump_house_id || !form.reporter_name || !form.title || !form.description) {
+    alert('Mohon lengkapi semua field yang wajib diisi!')
+    isSubmitting.value = false
+    return
+  }
+  
   // Debug selected images
   console.log('Selected images before submit:', selectedImages.value)
   console.log('Number of selected images:', selectedImages.value.length)
   
-  // Create FormData exactly like in Education
-    const formData = new FormData()
-    
-  // Add all form fields first
-  formData.append('pump_house_id', form.pump_house_id)
-  formData.append('reporter_name', form.reporter_name)
-  formData.append('reporter_phone', form.reporter_phone)
-  formData.append('reporter_email', form.reporter_email)
-  formData.append('title', form.title)
-  formData.append('description', form.description)
-  formData.append('location_detail', form.location_detail)
-    
-  // Add images exactly like in Education with proper array format
-    selectedImages.value.forEach((image, index) => {
-      formData.append(`images[${index}]`, image)
-    console.log(`Adding image[${index}]:`, image.name, image.size)
-  })
-  
-  // Debug all form data
-  console.log('=== FORM DATA DEBUG ===')
-  for (let [key, value] of formData.entries()) {
-    if (value instanceof File) {
-      console.log(`${key}: [FILE] ${value.name} (${value.size} bytes)`)
-    } else {
-      console.log(`${key}: ${value}`)
-    }
+  // Prepare form data for Inertia
+  const formData = {
+    pump_house_id: form.pump_house_id,
+    reporter_name: form.reporter_name,
+    reporter_phone: form.reporter_phone,
+    reporter_email: form.reporter_email,
+    title: form.title,
+    description: form.description,
+    location_detail: form.location_detail,
+    images: selectedImages.value // Send the actual files
   }
+  
+  console.log('=== SENDING DATA ===')
+  console.log('Form data:', formData)
+  console.log('Images count:', formData.images.length)
+  formData.images.forEach((image, index) => {
+    console.log(`Image ${index}:`, image.name, image.size, image.type)
+  })
   console.log('=== END DEBUG ===')
   
-  // Use router.post exactly like in Education
-  router.post(route('public.submit-report'), formData, {
-      forceFormData: true,
+  // Use form.post with transform for file handling
+  form.transform((data) => {
+    const transformedData = { ...data }
+    transformedData.images = selectedImages.value
+    return transformedData
+  }).post(route('public.submit-report'), {
     onSuccess: (page) => {
       console.log('✅ Report submitted successfully!')
       console.log('Response page:', page)
       resetForm()
-      },
-      onError: (errors) => {
+    },
+    onError: (errors) => {
       console.error('❌ Validation errors:', errors)
-      form.errors = errors
-      },
-      onFinish: () => {
-      console.log('🏁 Request finished')
-        isSubmitting.value = false
+      
+      // Show validation errors
+      if (errors.images) {
+        if (Array.isArray(errors.images)) {
+          errors.images.forEach((error, index) => {
+            if (error) alert(`Gambar ${index + 1}: ${error}`)
+          })
+        } else {
+          alert('Error gambar: ' + errors.images)
+        }
       }
-    })
+      
+      Object.keys(errors).forEach(key => {
+        if (key !== 'images' && errors[key]) {
+          alert(`${key}: ${errors[key]}`)
+        }
+      })
+    },
+    onFinish: () => {
+      console.log('🏁 Request finished')
+      isSubmitting.value = false
+    }
+  })
 }
 </script> 
  

@@ -251,6 +251,8 @@ import { computed } from 'vue'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/Components/ui/card'
 import { Button } from '@/Components/ui/button'
 import { Badge } from '@/Components/ui/badge'
+import { useDateUtils } from '@/composables/useDateUtils'
+import { useWaterLevelUtils } from '@/composables/useWaterLevelUtils'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/Components/ui/table'
 
 const props = defineProps({
@@ -258,6 +260,10 @@ const props = defineProps({
     recentHistory: Object,
     filters: Object,
 })
+
+// Use composables
+const { formatDateTime } = useDateUtils()
+const { getStatusText, getStatusBadgeVariant } = useWaterLevelUtils()
 
 const criticalCount = computed(() => {
     return props.pumpHouses.filter(house => getCurrentWaterLevel(house) >= 2.5).length
@@ -281,27 +287,8 @@ const getCurrentWaterLevel = (pumpHouse) => {
     return 0
 }
 
-const getStatusText = (level) => {
-    if (level >= 2.5) return 'Kritis'
-    if (level >= 2.0) return 'Peringatan'
-    return 'Normal'
-}
-
-const getStatusBadgeVariant = (level) => {
-    if (level >= 2.5) return 'destructive'
-    if (level >= 2.0) return 'secondary'
-    return 'default'
-}
-
-const formatDate = (dateString) => {
-    return new Date(dateString).toLocaleString('id-ID', {
-        year: 'numeric',
-        month: 'short',
-        day: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit'
-    })
-}
+// Alias untuk consistency
+const formatDate = formatDateTime
 
 const sort = (column) => {
     const currentSort = props.filters.sort

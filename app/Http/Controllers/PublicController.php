@@ -12,9 +12,11 @@ use App\Models\PumpHouseThresholdSetting;
 use App\Services\ImageUploadService;
 use App\Services\PublicService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Validator;
 use Inertia\Inertia;
 use Carbon\Carbon;
+use Exception;
 
 class PublicController extends Controller
 {
@@ -71,10 +73,31 @@ class PublicController extends Controller
             return back()->withErrors($validator)->withInput();
         }
         
-        $report = $this->publicService->createReport($request);
-        
-        return redirect()->route('public.report-success')
-            ->with('success', 'Laporan berhasil dikirim!');
+        try {
+            // Railway-specific: Handle nullable email validation
+            $requestData = $request->all();
+            if (empty($requestData['reporter_email'])) {
+                $requestData['reporter_email'] = null;
+            }
+            
+            $report = $this->publicService->createReport($request);
+            
+            return redirect()->route('public.report-success')
+                ->with('success', 'Laporan berhasil dikirim!');
+                
+        } catch (Exception $e) {
+            // Railway-specific error handling
+            Log::error('Public report submission failed in Railway', [
+                'error' => $e->getMessage(),
+                'request_data' => $request->only([
+                    'pump_house_id', 'reporter_name', 'reporter_email', 
+                    'reporter_phone', 'title', 'description'
+                ])
+            ]);
+            
+            return back()->withErrors(['error' => 'Terjadi kesalahan saat mengirim laporan. Silakan coba lagi.'])
+                        ->withInput();
+        }
     }
     
     /**
