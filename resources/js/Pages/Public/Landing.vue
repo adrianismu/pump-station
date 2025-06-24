@@ -315,9 +315,6 @@ import {
   getRainfallIntensity,
   getWeatherIcon 
 } from '@/services/weatherService'
-import { useDateUtils } from '@/composables/useDateUtils'
-import { useStatusUtils } from '@/composables/useStatusUtils'
-import { useIconMapping } from '@/composables/useIconMapping'
 
 defineOptions({ layout: PublicLayout })
 
@@ -328,13 +325,52 @@ const props = defineProps({
   stats: Object,
 })
 
-// Use composables
-const { formatTimeAgo } = useDateUtils()
-const { getRainfallBadgeVariant, getFloodRiskVariant } = useStatusUtils()
-const { getWeatherIcon: getWeatherIconComponent } = useIconMapping()
-
 const isLoadingWeather = ref(true)
 const pumpHousesWithWeather = ref([])
+
+const formatTimeAgo = (dateString) => {
+  if (!dateString) return "Tidak ada data"
+  const date = new Date(dateString)
+  const now = new Date()
+  const diffInSeconds = Math.floor((now - date) / 1000)
+
+  if (diffInSeconds < 60) return `${diffInSeconds} detik yang lalu`
+  const diffInMinutes = Math.floor(diffInSeconds / 60)
+  if (diffInMinutes < 60) return `${diffInMinutes} menit yang lalu`
+  const diffInHours = Math.floor(diffInMinutes / 60)
+  if (diffInHours < 24) return `${diffInHours} jam yang lalu`
+  const diffInDays = Math.floor(diffInHours / 24)
+  if (diffInDays < 30) return `${diffInDays} hari yang lalu`
+  const diffInMonths = Math.floor(diffInDays / 30)
+  return `${diffInMonths} bulan yang lalu`
+}
+
+const getWeatherIconComponent = (iconName) => {
+  const iconMap = {
+    'Sun': Sun,
+    'Cloud': Cloud,
+    'CloudRain': CloudRain,
+    'CloudSnow': CloudSnow,
+    'CloudLightning': CloudLightning,
+    'CloudDrizzle': CloudDrizzle,
+    'CloudSun': CloudSun,
+    'CloudFog': CloudFog,
+  }
+  return iconMap[iconName] || Cloud
+}
+
+const getRainfallBadgeVariant = (rainfall) => {
+  if (rainfall > 20) return 'destructive'
+  if (rainfall > 10) return 'secondary'
+  if (rainfall > 4) return 'outline'
+  return 'default'
+}
+
+const getFloodRiskVariant = (risk) => {
+  if (risk === 'Tinggi') return 'destructive'
+  if (risk === 'Sedang') return 'secondary'
+  return 'default'
+}
 
 const calculateFloodRisk = (rainfall, weatherCode) => {
   // Calculate flood risk based on rainfall and weather conditions

@@ -74,78 +74,28 @@ class NotificationService
      */
     private function storeNotifications(Alert $alert, array $recipients)
     {
-        $successCount = 0;
-        $errorCount = 0;
-        
         try {
             foreach ($recipients as $recipient) {
                 $user = User::find($recipient['user_id']);
                 if ($user) {
-                    try {
-                        // Force synchronous notification (no queue)
-                        $user->notify(new WeatherAlertNotification($alert));
-                        $successCount++;
-                        
-                        Log::info('Notification sent successfully', [
-                            'user_id' => $user->id,
-                            'user_email' => $user->email,
-                            'user_name' => $user->name,
-                            'alert_id' => $alert->id,
-                            'alert_type' => $alert->type,
-                            'alert_severity' => $alert->severity,
-                            'environment' => app()->environment(),
-                            'timestamp' => now()->toDateTimeString()
-                        ]);
-                    } catch (\Exception $userError) {
-                        $errorCount++;
-                        Log::error('Failed to send notification to specific user', [
-                            'user_id' => $user->id,
-                            'user_email' => $user->email,
-                            'alert_id' => $alert->id,
-                            'error' => $userError->getMessage(),
-                            'environment' => app()->environment()
-                        ]);
-                    }
-                } else {
-                    $errorCount++;
-                    Log::warning('User not found for notification', [
-                        'user_id' => $recipient['user_id'],
-                        'alert_id' => $alert->id
+                    $user->notify(new WeatherAlertNotification($alert));
+                    Log::info('Notification sent successfully', [
+                        'user_id' => $user->id,
+                        'user_email' => $user->email,
+                        'alert_id' => $alert->id,
+                        'alert_type' => $alert->type,
+                        'environment' => app()->environment()
                     ]);
                 }
             }
-            
-            // Log summary
-            Log::info('Notification distribution completed', [
-                'alert_id' => $alert->id,
-                'alert_type' => $alert->type,
-                'pump_house_id' => $alert->pump_house_id,
-                'success_count' => $successCount,
-                'error_count' => $errorCount,
-                'total_recipients' => count($recipients),
-                'environment' => app()->environment()
-            ]);
-            
         } catch (\Exception $e) {
-            Log::error('Critical error in notification distribution', [
+            Log::error('Failed to send notifications', [
                 'alert_id' => $alert->id,
                 'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString(),
                 'recipients_count' => count($recipients),
                 'environment' => app()->environment()
             ]);
-            
-            // Throw exception for Railway monitoring
-            if (app()->environment('production')) {
-                throw new \Exception("Notification system failed: " . $e->getMessage());
-            }
         }
-        
-        return [
-            'success_count' => $successCount,
-            'error_count' => $errorCount,
-            'total_recipients' => count($recipients)
-        ];
     }
 
     /**

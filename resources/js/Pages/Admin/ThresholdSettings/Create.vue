@@ -25,42 +25,42 @@
             <!-- Form -->
             <Card>
                 <CardContent class="p-6">
-                    <form @submit.prevent="submit" class="space-y-6">
+                        <form @submit.prevent="submit" class="space-y-6">
                         <!-- Name -->
                         <div class="space-y-2">
                             <Label for="name">Nama *</Label>
                             <Input
-                                id="name"
-                                v-model="form.name"
-                                type="text"
+                                    id="name"
+                                    v-model="form.name"
+                                    type="text"
                                 placeholder="Contoh: Peringatan, Kritis, dll"
-                                required
-                            />
+                                    required
+                                />
                             <p v-if="form.errors.name" class="text-sm text-destructive">
                                 {{ form.errors.name }}
                             </p>
                             <p class="text-xs text-muted-foreground">
                                 Nama internal untuk threshold (tanpa spasi, huruf kecil)
                             </p>
-                        </div>
+                            </div>
 
                         <!-- Label -->
                         <div class="space-y-2">
                             <Label for="label">Label *</Label>
                             <Input
-                                id="label"
-                                v-model="form.label"
-                                type="text"
+                                    id="label"
+                                    v-model="form.label"
+                                    type="text"
                                 placeholder="Contoh: Peringatan, Kritis, Normal"
-                                required
-                            />
+                                    required
+                                />
                             <p v-if="form.errors.label" class="text-sm text-destructive">
                                 {{ form.errors.label }}
                             </p>
                             <p class="text-xs text-muted-foreground">
                                 Label yang akan ditampilkan kepada user
                             </p>
-                        </div>
+                            </div>
 
                         <!-- Water Level -->
                         <div class="space-y-2">
@@ -87,7 +87,7 @@
                             <p class="text-xs text-muted-foreground">
                                 Ketinggian air minimum untuk memicu threshold ini
                             </p>
-                        </div>
+                            </div>
 
                         <!-- Color -->
                         <div class="space-y-2">
@@ -114,7 +114,7 @@
                             <p class="text-xs text-muted-foreground">
                                 Warna yang akan digunakan untuk status dan indikator
                             </p>
-                        </div>
+                            </div>
 
                         <!-- Severity -->
                         <div class="space-y-2">
@@ -156,15 +156,15 @@
                             <p class="text-xs text-muted-foreground">
                                 Menentukan prioritas notifikasi dan alert
                             </p>
-                        </div>
+                            </div>
 
                         <!-- Description -->
                         <div class="space-y-2">
                             <Label for="description">Deskripsi</Label>
                             <Textarea
-                                id="description"
-                                v-model="form.description"
-                                rows="3"
+                                    id="description"
+                                    v-model="form.description"
+                                    rows="3"
                                 placeholder="Deskripsi detail tentang threshold ini..."
                             />
                             <p v-if="form.errors.description" class="text-sm text-destructive">
@@ -173,18 +173,18 @@
                             <p class="text-xs text-muted-foreground">
                                 Opsional - Penjelasan detail tentang kondisi threshold
                             </p>
-                        </div>
+                            </div>
 
                         <!-- Is Active -->
                         <div class="flex items-center space-x-2">
                             <Checkbox 
-                                id="is_active" 
+                                    id="is_active"
                                 v-model:checked="form.is_active"
-                            />
+                                />
                             <Label for="is_active" class="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
                                 Aktifkan threshold ini
                             </Label>
-                        </div>
+                            </div>
 
                         <!-- Preview Card -->
                         <div v-if="form.name || form.label" class="space-y-2">
@@ -202,10 +202,10 @@
                                         </div>
                                         <div v-if="form.description" class="text-xs text-muted-foreground mt-1">
                                             {{ form.description }}
-                                        </div>
-                                    </div>
-                                </div>
                             </div>
+                    </div>
+                </div>
+            </div>
                         </div>
 
                         <!-- Submit Buttons -->

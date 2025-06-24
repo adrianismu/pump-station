@@ -165,26 +165,30 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/Com
 import { Button } from '@/Components/ui/button'
 import { Badge } from '@/Components/ui/badge'
 import { Label } from '@/Components/ui/label'
-import { useDateUtils } from '@/composables/useDateUtils'
-import { useWaterLevelUtils } from '@/composables/useWaterLevelUtils'
 
 const props = defineProps({
     waterLevel: Object,
 })
 
-// Use composables
-const { formatDateTime } = useDateUtils()
-const { getStatusText, getStatusBadgeVariant } = useWaterLevelUtils()
+const getStatusText = (level) => {
+    const numLevel = parseFloat(level)
+    if (numLevel >= 2.5) return 'Level Kritis'
+    if (numLevel >= 2.0) return 'Level Peringatan'
+    return 'Level Normal'
+}
 
-// Alias untuk consistency
-const formatDate = formatDateTime
-
-// Status utility functions yang specific untuk water level detail
 const getStatusDescription = (level) => {
     const numLevel = parseFloat(level)
     if (numLevel >= 2.5) return 'Ketinggian air sangat tinggi, berpotensi banjir'
     if (numLevel >= 2.0) return 'Ketinggian air tinggi, perlu waspada'
     return 'Ketinggian air dalam batas normal'
+}
+
+const getStatusBadgeVariant = (level) => {
+    const numLevel = parseFloat(level)
+    if (numLevel >= 2.5) return 'destructive'
+    if (numLevel >= 2.0) return 'secondary'
+    return 'default'
 }
 
 const getStatusIndicatorClass = (level) => {
@@ -206,6 +210,16 @@ const getStatusCardClass = (level) => {
     if (numLevel >= 2.5) return 'bg-red-50 border-red-200'
     if (numLevel >= 2.0) return 'bg-yellow-50 border-yellow-200'
     return 'bg-green-50 border-green-200'
+}
+
+const formatDate = (dateString) => {
+    return new Date(dateString).toLocaleString('id-ID', {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+    })
 }
 
 const deleteRecord = () => {

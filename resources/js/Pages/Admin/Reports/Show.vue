@@ -456,7 +456,6 @@
   import { Separator } from "@/Components/ui/separator"
   import { useDateUtils } from "@/composables/useDateUtils"
   import { useStatusUtils } from "@/composables/useStatusUtils"
-  import { useImageUtils } from "@/composables/useImageUtils"
   
   defineOptions({ layout: Layout })
   
@@ -660,8 +659,15 @@
   const { formatDateTime } = useDateUtils()
   const { getReportStatusVariant } = useStatusUtils()
   
-  // Use image utils composable
-  const { parseImages } = useImageUtils()
+  // Parse images from string JSON or array
+  const parseImages = (imagesJson) => {
+    if (!imagesJson) return []
+    try {
+      return typeof imagesJson === "string" ? JSON.parse(imagesJson) : imagesJson
+    } catch {
+      return []
+    }
+  }
   </script>
   
   <style>

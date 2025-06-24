@@ -146,7 +146,7 @@ class WaterLevelController extends Controller
             return redirect()->route('admin.water-level.history', $request->pump_house_id)
                 ->with('success', 'Data ketinggian air berhasil disimpan');
         }
-        
+
         return redirect()->route('admin.water-level.index')
             ->with('success', 'Data ketinggian air berhasil disimpan');
     }

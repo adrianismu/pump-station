@@ -459,7 +459,7 @@ import {
 import { Button } from '@/Components/ui/button'
 
 import Layout from "@/Layouts/AdminLayout.vue"
-import { getWeatherData, getRainfallIntensity, getWeatherDescription, calculateFloodRisk, formatRainfall } from "@/services/weatherService"
+import { getWeatherData, getRainfallIntensity, getWeatherDescription, getWeatherIcon, calculateFloodRisk, getFloodRiskVariant } from "@/services/weatherService"
 import { useDateUtils } from "@/composables/useDateUtils"
 import { useStatusUtils } from "@/composables/useStatusUtils"
 import { useIconMapping } from "@/composables/useIconMapping"
@@ -479,7 +479,7 @@ const weatherDataMap = ref({})
 
 // Use composables untuk utility functions
 const { formatTimeAgo } = useDateUtils()
-const { getPumpHouseStatusVariant, getFloodRiskVariant } = useStatusUtils()
+const { getPumpHouseStatusVariant } = useStatusUtils()
 const { getWeatherIcon: getWeatherIconName } = useIconMapping()
 
 // Computed properties
@@ -506,7 +506,7 @@ const atRiskPumpHouses = computed(() => {
       windSpeed: weather.wind_speed_10m || 0,
       // Use backend-provided descriptions and icons or fallback to local functions
       weatherDescription: weather.weather_description || (weatherCode ? getWeatherDescription(weatherCode) : "-"),
-      weatherIcon: weather.weather_icon || "Cloud",
+      weatherIcon: weather.weather_icon || getWeatherIcon(weatherCode) || "Cloud",
       risk,
       rainfallIntensity: weather.precipitation_intensity || getRainfallIntensity(precipitation),
       // Add priority score for sorting
@@ -557,7 +557,9 @@ const getWeatherComponent = (iconName) => {
   return getWeatherIconName(iconName)
 }
 
-const getFloodRiskBadgeVariant = getFloodRiskVariant
+const getFloodRiskBadgeVariant = (risk) => {
+  return getFloodRiskVariant(risk)
+}
 
 const getReportStatusClass = (status) => {
   switch (status) {

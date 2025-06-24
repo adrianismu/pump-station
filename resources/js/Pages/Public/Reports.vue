@@ -81,12 +81,13 @@
             </div>
 
             <div class="space-y-2">
-              <Label for="reporter_phone">Nomor Telepon (Opsional)</Label>
+              <Label for="reporter_phone">Nomor Telepon <span class="text-red-500">*</span></Label>
               <Input 
                 id="reporter_phone"
                 v-model="form.reporter_phone" 
                 placeholder="08xxxxxxxxxx (opsional)"
                 type="tel"
+                required
               />
               <p class="text-sm text-muted-foreground">
                 Untuk follow-up jika diperlukan
@@ -274,7 +275,6 @@
 <script setup>
 import { ref, computed } from 'vue'
 import { useForm, router } from '@inertiajs/vue3'
-import { useImageUtils } from '@/composables/useImageUtils'
 import PublicLayout from '@/Layouts/PublicLayout.vue'
 import { Button } from '@/Components/ui/button'
 import { Card } from '@/Components/ui/card'
@@ -305,9 +305,6 @@ defineOptions({ layout: PublicLayout })
 const props = defineProps({
   pumpHouses: Array,
 })
-
-// Use composables
-const { validateImageFile } = useImageUtils()
 
 const form = useForm({
   pump_house_id: '',
@@ -341,10 +338,9 @@ const handleImageUpload = (event) => {
   }
   
   files.forEach((file, index) => {
-    // Use validation from composable
-    const validation = validateImageFile(file, 2)
-    if (!validation.isValid) {
-      alert(`Gambar ${file.name}: ${validation.error}`)
+    // Check file size (2MB limit)
+    if (file.size > 2 * 1024 * 1024) {
+      alert(`Gambar ${file.name} terlalu besar. Maksimal 2MB per gambar.`)
       return
     }
     
@@ -378,8 +374,8 @@ const submitReport = () => {
   console.log('Number of selected images:', selectedImages.value.length)
   
   // Create FormData exactly like in Education
-  const formData = new FormData()
-  
+    const formData = new FormData()
+    
   // Add all form fields first
   formData.append('pump_house_id', form.pump_house_id)
   formData.append('reporter_name', form.reporter_name)
@@ -388,10 +384,10 @@ const submitReport = () => {
   formData.append('title', form.title)
   formData.append('description', form.description)
   formData.append('location_detail', form.location_detail)
-  
+    
   // Add images exactly like in Education with proper array format
-  selectedImages.value.forEach((image, index) => {
-    formData.append(`images[${index}]`, image)
+    selectedImages.value.forEach((image, index) => {
+      formData.append(`images[${index}]`, image)
     console.log(`Adding image[${index}]:`, image.name, image.size)
   })
   
@@ -408,21 +404,21 @@ const submitReport = () => {
   
   // Use router.post exactly like in Education
   router.post(route('public.submit-report'), formData, {
-    forceFormData: true,
+      forceFormData: true,
     onSuccess: (page) => {
       console.log('✅ Report submitted successfully!')
       console.log('Response page:', page)
       resetForm()
-    },
-    onError: (errors) => {
+      },
+      onError: (errors) => {
       console.error('❌ Validation errors:', errors)
       form.errors = errors
-    },
-    onFinish: () => {
+      },
+      onFinish: () => {
       console.log('🏁 Request finished')
-      isSubmitting.value = false
-    }
-  })
+        isSubmitting.value = false
+      }
+    })
 }
 </script> 
  

@@ -102,7 +102,7 @@
           <div class="flex flex-col md:flex-row gap-4">
             <div class="md:w-2/3">
               <div class="flex items-center gap-2 mb-2">
-                <Badge :variant="getReportStatusVariant(report.status)">
+                <Badge :variant="getStatusVariant(report.status)">
                   {{ report.status }}
                 </Badge>
                 <span class="text-xs text-muted-foreground">{{ formatDate(report.created_at) }}</span>
@@ -241,9 +241,6 @@ import {
 import Layout from "@/Layouts/AdminLayout.vue"
 
 import { router } from '@inertiajs/vue3'
-import { useImageUtils } from '@/composables/useImageUtils'
-import { useDateUtils } from '@/composables/useDateUtils'
-import { useStatusUtils } from '@/composables/useStatusUtils'
 
 import {
   Card,
@@ -280,11 +277,6 @@ defineOptions({ layout: Layout })
 const props = defineProps({
   reports: Array,
 })
-
-// Use composables
-const { parseImages } = useImageUtils()
-const { formatDateTime } = useDateUtils()
-const { getReportStatusVariant } = useStatusUtils()
 
 const searchQuery = ref("")
 const statusFilter = ref("all")
@@ -335,8 +327,36 @@ const completedPercentage = computed(() => {
   return Math.round((completedCount.value / props.reports.length) * 100)
 })
 
-// Alias untuk formatDate dari composable
-const formatDate = formatDateTime
+// Get badge variant based on status
+const getStatusVariant = (status) => {
+  if (status === 'Belum Ditanggapi') return 'warning'
+  if (status === 'Sedang Diproses') return 'default'
+  if (status === 'Selesai') return 'success'
+  return 'default'
+}
+
+// Parsing gambar dari string JSON atau array
+const parseImages = (imagesJson) => {
+  if (!imagesJson) return []
+  try {
+    return typeof imagesJson === "string" ? JSON.parse(imagesJson) : imagesJson
+  } catch {
+    return []
+  }
+}
+
+// Format tanggal ke Indonesia
+const formatDate = (dateString) => {
+  if (!dateString) return "Tidak ada data"
+  const date = new Date(dateString)
+  return date.toLocaleDateString("id-ID", {
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  })
+}
 
 const viewDetail = (reportId) => {
   router.visit(`/admin/reports/${reportId}`);
