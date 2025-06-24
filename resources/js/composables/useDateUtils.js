@@ -13,7 +13,12 @@ export function useDateUtils() {
     
     const finalOptions = { ...defaultOptions, ...options }
     
-    return new Date(dateString).toLocaleDateString('id-ID', finalOptions)
+    try {
+      return new Date(dateString).toLocaleDateString('id-ID', finalOptions)
+    } catch (error) {
+      console.warn('Error formatting date:', error)
+      return new Date(dateString).toLocaleDateString()
+    }
   }
 
   // Format waktu
@@ -30,13 +35,31 @@ export function useDateUtils() {
   const formatDateTime = (dateString) => {
     if (!dateString) return "Tidak ada data"
     
-    return new Date(dateString).toLocaleString('id-ID', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
-    })
+    try {
+      return new Date(dateString).toLocaleString('id-ID', {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+      })
+    } catch (error) {
+      console.warn('Error formatting datetime:', error)
+      // Fallback to manual formatting
+      const date = new Date(dateString)
+      const day = date.getDate().toString().padStart(2, '0')
+      const month = date.getMonth() + 1
+      const year = date.getFullYear()
+      const hours = date.getHours().toString().padStart(2, '0')
+      const minutes = date.getMinutes().toString().padStart(2, '0')
+      
+      const monthNames = [
+        'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
+        'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'
+      ]
+      
+      return `${day} ${monthNames[month - 1]} ${year}, ${hours}:${minutes}`
+    }
   }
 
   // Format "time ago" dalam bahasa Indonesia
@@ -46,6 +69,10 @@ export function useDateUtils() {
     const date = new Date(dateString)
     const now = new Date()
     const diffInSeconds = Math.floor((now - date) / 1000)
+
+    if (diffInSeconds < 10) {
+      return "Baru saja"
+    }
 
     if (diffInSeconds < 60) {
       return `${diffInSeconds} detik yang lalu`
@@ -62,12 +89,26 @@ export function useDateUtils() {
     }
 
     const diffInDays = Math.floor(diffInHours / 24)
-    if (diffInDays < 30) {
+    if (diffInDays === 1) {
+      return "Kemarin"
+    }
+    
+    if (diffInDays < 7) {
       return `${diffInDays} hari yang lalu`
     }
 
+    const diffInWeeks = Math.floor(diffInDays / 7)
+    if (diffInWeeks < 4) {
+      return `${diffInWeeks} minggu yang lalu`
+    }
+
     const diffInMonths = Math.floor(diffInDays / 30)
-    return `${diffInMonths} bulan yang lalu`
+    if (diffInMonths < 12) {
+      return `${diffInMonths} bulan yang lalu`
+    }
+
+    const diffInYears = Math.floor(diffInDays / 365)
+    return `${diffInYears} tahun yang lalu`
   }
 
   return {

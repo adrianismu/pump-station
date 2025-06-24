@@ -130,6 +130,8 @@
             />
             <p class="text-sm text-muted-foreground">
               Opsional - Upload foto kondisi (maksimal 5 gambar, masing-masing 2MB)
+              <br />
+              <span class="text-xs text-blue-600">💡 Tip: Pilih beberapa gambar sekaligus atau tambahkan satu per satu</span>
             </p>
             
             <!-- Image Preview -->
@@ -271,7 +273,7 @@
 
 <script setup>
 import { ref, computed } from 'vue'
-import { useForm } from '@inertiajs/vue3'
+import { useForm, router } from '@inertiajs/vue3'
 import PublicLayout from '@/Layouts/PublicLayout.vue'
 import { Button } from '@/Components/ui/button'
 import { Card } from '@/Components/ui/card'
@@ -327,15 +329,12 @@ const resetForm = () => {
 const handleImageUpload = (event) => {
   const files = Array.from(event.target.files)
   
-  // Limit to 5 images
-  if (files.length > 5) {
-    alert('Maksimal 5 gambar yang dapat diupload')
+  // Check total images including existing ones
+  const totalImages = selectedImages.value.length + files.length
+  if (totalImages > 5) {
+    alert(`Maksimal 5 gambar yang dapat diupload. Anda sudah memiliki ${selectedImages.value.length} gambar, hanya bisa menambah ${5 - selectedImages.value.length} gambar lagi.`)
     return
   }
-  
-  // Clear previous selections
-  imagePreview.value = []
-  selectedImages.value = []
   
   files.forEach((file, index) => {
     // Check file size (2MB limit)
@@ -356,6 +355,9 @@ const handleImageUpload = (event) => {
     
     selectedImages.value.push(file)
   })
+  
+  // Clear input to allow selecting same files again if needed
+  event.target.value = ''
 }
 
 const removeImage = (index) => {
@@ -366,33 +368,56 @@ const removeImage = (index) => {
 const submitReport = () => {
   isSubmitting.value = true
   
-    // Create FormData for file upload
-    const formData = new FormData()
-    
-    // Add form fields
-    Object.keys(form).forEach(key => {
-      if (form[key]) {
-        formData.append(key, form[key])
-      }
-    })
-    
-    // Add images
-    selectedImages.value.forEach((image, index) => {
-      formData.append(`images[${index}]`, image)
-    })
-    
-  form.post(route('public.submit-report'), {
-      forceFormData: true,
-      onSuccess: () => {
-        // Form akan di-reset otomatis oleh Inertia redirect
-      },
-      onError: (errors) => {
-        console.error('Validation errors:', errors)
-      },
-      onFinish: () => {
-        isSubmitting.value = false
-      }
-    })
+  // Debug selected images
+  console.log('Selected images before submit:', selectedImages.value)
+  console.log('Number of selected images:', selectedImages.value.length)
+  
+  // Create FormData exactly like in Education
+  const formData = new FormData()
+  
+  // Add all form fields first
+  formData.append('pump_house_id', form.pump_house_id)
+  formData.append('reporter_name', form.reporter_name)
+  formData.append('reporter_phone', form.reporter_phone)
+  formData.append('reporter_email', form.reporter_email)
+  formData.append('title', form.title)
+  formData.append('description', form.description)
+  formData.append('location_detail', form.location_detail)
+  
+  // Add images exactly like in Education with proper array format
+  selectedImages.value.forEach((image, index) => {
+    formData.append(`images[${index}]`, image)
+    console.log(`Adding image[${index}]:`, image.name, image.size)
+  })
+  
+  // Debug all form data
+  console.log('=== FORM DATA DEBUG ===')
+  for (let [key, value] of formData.entries()) {
+    if (value instanceof File) {
+      console.log(`${key}: [FILE] ${value.name} (${value.size} bytes)`)
+    } else {
+      console.log(`${key}: ${value}`)
+    }
+  }
+  console.log('=== END DEBUG ===')
+  
+  // Use router.post exactly like in Education
+  router.post(route('public.submit-report'), formData, {
+    forceFormData: true,
+    onSuccess: (page) => {
+      console.log('✅ Report submitted successfully!')
+      console.log('Response page:', page)
+      resetForm()
+    },
+    onError: (errors) => {
+      console.error('❌ Validation errors:', errors)
+      form.errors = errors
+    },
+    onFinish: () => {
+      console.log('🏁 Request finished')
+      isSubmitting.value = false
+    }
+  })
 }
 </script> 
  
