@@ -85,13 +85,10 @@
               <Input 
                 id="reporter_phone"
                 v-model="form.reporter_phone" 
-                placeholder="08xxxxxxxxxx (opsional)"
+                placeholder="08xxxxxxxxxx"
                 type="tel"
                 required
               />
-              <p class="text-sm text-muted-foreground">
-                Untuk follow-up jika diperlukan
-              </p>
             </div>
           </div>
 
